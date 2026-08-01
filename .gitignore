@@ -1,0 +1,75 @@
+# ===================== Unity =====================
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/[Ii]nitTest[Rr]unner*/
+/[Aa]ssets/AssetStoreTools/
+/[Aa]ssets/Plugins/*/Cache/
+
+# Unity generated / lock
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+crashlytics-build.properties
+*.stackdump
+
+# ===================== Logs locais =====================
+*.log
+/c*.log
+/chk.log
+/s*.log
+/compile.log
+/caos_boot.txt
+
+# ===================== Builds =====================
+*.apk
+*.aab
+*.ipa
+*.app
+*.exe
+*.dll
+!Assets/**/*.dll
+
+# ===================== IDE / OS =====================
+.vs/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.mdb
+*.opendb
+*.VC.db
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===================== Recovery / local =====================
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+*.orig
+*.bak
+
+# ===================== Secrets =====================
+.env
+.env.*
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist

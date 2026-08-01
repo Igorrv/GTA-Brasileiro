@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-label="Cidade do Caos">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a2332"/>
+      <stop offset="55%" stop-color="#2a1f18"/>
+      <stop offset="100%" stop-color="#0f1419"/>
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2a2e"/>
+      <stop offset="100%" stop-color="#1a1a1c"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e8b84a" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#e8b84a" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#e8b84a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="280" fill="url(#sky)"/>
+  <!-- skyline -->
+  <g fill="#12161c" opacity="0.95">
+    <rect x="40" y="90" width="70" height="120"/>
+    <rect x="120" y="60" width="55" height="150"/>
+    <rect x="185" y="100" width="90" height="110"/>
+    <rect x="290" y="45" width="48" height="165"/>
+    <rect x="350" y="80" width="100" height="130"/>
+    <rect x="470" y="55" width="60" height="155"/>
+    <rect x="545" y="95" width="80" height="115"/>
+    <rect x="640" y="40" width="50" height="170"/>
+    <rect x="705" y="75" width="110" height="135"/>
+    <rect x="830" y="50" width="45" height="160"/>
+    <rect x="890" y="88" width="95" height="122"/>
+    <rect x="1000" y="65" width="70" height="145"/>
+    <rect x="1085" y="100" width="80" height="110"/>
+  </g>
+  <!-- windows -->
+  <g fill="#e8b84a" opacity="0.55">
+    <rect x="130" y="80" width="8" height="10"/><rect x="145" y="80" width="8" height="10"/>
+    <rect x="130" y="100" width="8" height="10"/><rect x="145" y="100" width="8" height="10"/>
+    <rect x="300" y="70" width="7" height="9"/><rect x="315" y="70" width="7" height="9"/>
+    <rect x="300" y="90" width="7" height="9"/><rect x="315" y="110" width="7" height="9"/>
+    <rect x="655" y="60" width="7" height="9"/><rect x="668" y="80" width="7" height="9"/>
+    <rect x="655" y="100" width="7" height="9"/><rect x="840" y="70" width="7" height="9"/>
+    <rect x="855" y="95" width="7" height="9"/><rect x="1015" y="85" width="8" height="10"/>
+    <rect x="1030" y="110" width="8" height="10"/>
+  </g>
+  <!-- road -->
+  <rect y="210" width="1200" height="70" fill="url(#road)"/>
+  <rect y="242" width="1200" height="4" fill="url(#glow)"/>
+  <g stroke="#e8b84a" stroke-width="3" stroke-dasharray="28 22" opacity="0.9">
+    <line x1="0" y1="244" x2="1200" y2="244"/>
+  </g>
+  <!-- title -->
+  <text x="600" y="130" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#f4efe6" letter-spacing="2">CIDADE DO CAOS</text>
+  <text x="600" y="168" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="18" fill="#e8b84a" letter-spacing="6">SÃO GENÉSIO · MUNDO ABERTO BRASILEIRO</text>
+</svg>

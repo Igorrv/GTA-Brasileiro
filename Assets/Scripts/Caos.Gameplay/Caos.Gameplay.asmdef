@@ -1,0 +1,14 @@
+{
+    "name": "Caos.Gameplay",
+    "rootNamespace": "Caos.Gameplay",
+    "references": [ "Caos.Core", "Caos.Data", "Caos.World" ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

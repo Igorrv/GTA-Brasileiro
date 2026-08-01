@@ -1,0 +1,14 @@
+{
+    "name": "Caos.Data",
+    "rootNamespace": "Caos.Data",
+    "references": [ "Caos.Core" ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

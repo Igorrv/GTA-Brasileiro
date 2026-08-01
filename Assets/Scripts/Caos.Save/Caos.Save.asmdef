@@ -1,0 +1,14 @@
+{
+    "name": "Caos.Save",
+    "rootNamespace": "Caos.Save",
+    "references": [ "Caos.Core", "Caos.Data", "Caos.World", "Caos.Gameplay" ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,30 @@
+{
+  "items": [
+    { "id": "Centro",      "nome": "Centro Histórico",        "tipo": "Centro",          "probEventoBase": 0.35, "centroX":    0, "centroZ":    0, "raio": 175, "corHex": "#B9A88F", "alturaMin": 4,  "alturaMax": 11, "policiamento": 3,
+      "descricao": "Camelô, fila de banco, calçadão, prédio velho com ar-condicionado pingando e o busão passando de dez em dez minutos." },
+
+    { "id": "Rodoviaria",  "nome": "Terminal Rodoviário",     "tipo": "Terminal/Camelô", "probEventoBase": 0.40, "centroX": -250, "centroZ":  190, "raio": 135, "corHex": "#9C8F7A", "alturaMin": 2,  "alturaMax": 5,  "policiamento": 4,
+      "descricao": "Rodoviária, camelódromo e ponto de van. Quem chega em São Genésio, chega aqui — com mala de feira e telefone na mão." },
+
+    { "id": "MonteVerde",  "nome": "Polo Monte Verde",        "tipo": "Zona Industrial", "probEventoBase": 0.25, "centroX":    0, "centroZ":  400, "raio": 175, "corHex": "#7E8489", "alturaMin": 1,  "alturaMax": 3,  "policiamento": 2,
+      "descricao": "Galpão, pátio de caminhão, portaria com catraca e o cheiro de óleo queimado. Turno das 6 começa cedo." },
+
+    { "id": "VistaAlegre", "nome": "Comunidade Vista Alegre", "tipo": "Favela",          "probEventoBase": 0.45, "centroX":  270, "centroZ":  250, "raio": 175, "corHex": "#C77B4E", "alturaMin": 1,  "alturaMax": 4,  "policiamento": 1,
+      "descricao": "Laje sobre laje subindo o morro, gato de luz, caixa d'água azul e a melhor vista da cidade — de graça." },
+
+    { "id": "SitioCapim",  "nome": "Sítio do Capim",          "tipo": "Zona Rural",      "probEventoBase": 0.25, "centroX":  420, "centroZ":  -60, "raio": 185, "corHex": "#8B9A5B", "alturaMin": 1,  "alturaMax": 2,  "policiamento": 1,
+      "descricao": "Estrada de terra, cerca de arame, boi na pista e o bar da esquina que também é mercearia e ponto de ônibus." },
+
+    { "id": "Belvedere",   "nome": "Jardim Belvedere",        "tipo": "Bairro Nobre",    "probEventoBase": 0.15, "centroX":  250, "centroZ": -300, "raio": 175, "corHex": "#DCD6C8", "alturaMin": 2,  "alturaMax": 8,  "policiamento": 5,
+      "descricao": "Muro alto, cerca elétrica, portaria 24h e placa de segurança particular. A calçada é bonita e ninguém anda nela." },
+
+    { "id": "Itauna",      "nome": "Praia de Itaúna",         "tipo": "Orla/Praia",      "probEventoBase": 0.25, "centroX":  -60, "centroZ": -430, "raio": 205, "corHex": "#E4D5A8", "alturaMin": 2,  "alturaMax": 7,  "policiamento": 3,
+      "descricao": "Calçadão de pedra portuguesa, quiosque, barraca de água de coco e o cara do milho verde gritando desde as dez da manhã." },
+
+    { "id": "Cohab",       "nome": "COHAB Bom Retiro",        "tipo": "Conjunto Habit.", "probEventoBase": 0.35, "centroX": -300, "centroZ": -180, "raio": 155, "corHex": "#C9B79B", "alturaMin": 3,  "alturaMax": 5,  "policiamento": 2,
+      "descricao": "Cinco blocos iguais, campinho de várzea no meio, som ligado no bloco C e roupa no varal em todo andar." },
+
+    { "id": "Marginal",    "nome": "Marginal do Rio Sujo",    "tipo": "Via Expressa",    "probEventoBase": 0.30, "centroX": -400, "centroZ":  120, "raio": 165, "corHex": "#6E7378", "alturaMin": 1,  "alturaMax": 4,  "policiamento": 3,
+      "descricao": "Viaduto, rio que ninguém olha, pichação no pilar e três faixas paradas às 18h — a cidade inteira tentando ir embora ao mesmo tempo." }
+  ]
+}

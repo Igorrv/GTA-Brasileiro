@@ -1,0 +1,244 @@
+{
+  "items": [
+    {
+      "id": "E01", "nome": "Enchente na Baixada",
+      "descricao": "A rua virou rio em quinze minutos. Carro boiando, sofá na calçada e alguém filmando tudo pra mandar no grupo da família.",
+      "bairros": ["Centro", "Itauna", "Marginal", "Cohab"], "horarios": [], "climas": ["Tempestade", "Chuva"], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Atravessar a pé na água suja",        "impacto": { "saude": -12, "energia": -8, "caos": 12 } },
+        { "rotulo": "Desviar pela rota longa",             "impacto": { "energia": -8, "caos": 10 } },
+        { "rotulo": "Ajudar a tirar o vizinho da água",    "impacto": { "saude": -5, "sanidade": 8, "caos": 12, "rep": [ {"alvo":"Centro","delta":10}, {"alvo":"Cohab","delta":10} ] } }
+      ]
+    },
+    {
+      "id": "E02", "nome": "Blitz da Lei Seca",
+      "descricao": "Cone, lanterna e fila de carro. 'Documento do veículo e habilitação, por favor.'",
+      "bairros": ["Marginal", "Centro", "Itauna", "Belvedere"], "horarios": ["noite", "madrugada"], "climas": [], "peso": 1.2,
+      "opcoes": [
+        { "rotulo": "Parar e apresentar documento",        "impacto": { "energia": -4, "sanidade": -3 } },
+        { "rotulo": "Fazer o retorno antes do cone",       "impacto": { "stars": 1, "caos": 8, "sanidade": -6 } },
+        { "rotulo": "Encostar e esperar liberar",          "impacto": { "energia": -6, "sanidade": 2 } }
+      ]
+    },
+    {
+      "id": "E03", "nome": "Apagão no Bairro",
+      "descricao": "Faltou luz de novo. A rua inteira sai pra calçada, e alguém grita 'já ligou pra companhia?'.",
+      "bairros": ["VistaAlegre", "Cohab", "SitioCapim", "Rodoviaria"], "horarios": ["noite", "madrugada"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Esperar na calçada com os vizinhos",  "impacto": { "sanidade": 6, "energia": -4, "caos": 6 } },
+        { "rotulo": "Improvisar gambiarra no poste",       "impacto": { "saude": -15, "caos": 14, "rep": [ {"alvo":"VistaAlegre","delta":6} ] } },
+        { "rotulo": "Ir embora antes que piore",           "impacto": { "energia": -6, "caos": 4 } }
+      ]
+    },
+    {
+      "id": "E04", "nome": "Abordagem no Farol",
+      "descricao": "Dois elementos cercam o carro no sinal fechado. 'Passa o celular, tio.'",
+      "bairros": ["VistaAlegre", "Centro", "Marginal", "Rodoviaria"], "horarios": ["madrugada", "noite"], "climas": [], "peso": 0.8,
+      "opcoes": [
+        { "rotulo": "Entregar o aparelho",                 "impacto": { "rs": -80, "sanidade": -12, "caos": 6 } },
+        { "rotulo": "Acelerar e vazar",                    "impacto": { "energia": -12, "stars": 1, "caos": 10 } },
+        { "rotulo": "Reagir",                              "impacto": { "saude": -28, "sanidade": -6, "stars": 1, "caos": 10 } }
+      ]
+    },
+    {
+      "id": "E05", "nome": "O Rapa Chegou na Feira",
+      "descricao": "Grito de 'ó o rapa!' e a calçada inteira desmontando barraca em dez segundos.",
+      "bairros": ["Rodoviaria", "Centro"], "horarios": ["manha", "dia", "tarde"], "climas": [], "peso": 1.1,
+      "opcoes": [
+        { "rotulo": "Ajudar a Tia Marlene a guardar tudo", "impacto": { "energia": -14, "sanidade": 5, "caos": 8, "rep": [ {"alvo":"Camelos","delta":14}, {"alvo":"Fiscais","delta":-10} ] } },
+        { "rotulo": "Fingir que é freguês",                "impacto": { "sanidade": -2 } },
+        { "rotulo": "Comprar tudo antes que apreendam",    "impacto": { "rs": -70, "fome": 20, "rep": [ {"alvo":"Camelos","delta":8} ] } }
+      ]
+    },
+    {
+      "id": "E06", "nome": "Buraco na Pista",
+      "descricao": "Cratera com um galho fincado dentro — o sinal universal de 'a prefeitura sabe'.",
+      "bairros": ["Marginal", "Cohab", "SitioCapim", "MonteVerde"], "horarios": [], "climas": [], "peso": 1.2,
+      "opcoes": [
+        { "rotulo": "Desviar em cima da hora",             "impacto": { "sanidade": -4, "caos": 5 } },
+        { "rotulo": "Passar por cima mesmo",               "impacto": { "saude": -6, "rs": -120, "caos": 8 } },
+        { "rotulo": "Parar e sinalizar pros outros",       "impacto": { "energia": -8, "sanidade": 6, "rep": [ {"alvo":"Marginal","delta":8} ] } }
+      ]
+    },
+    {
+      "id": "E07", "nome": "Greve de Ônibus",
+      "descricao": "Terminal parado, catraca travada e trezentas pessoas decidindo ir a pé ao mesmo tempo.",
+      "bairros": ["Rodoviaria", "Centro", "Cohab"], "horarios": ["manha", "tarde"], "climas": [], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Ir a pé mesmo",                       "impacto": { "energia": -20, "fome": -10, "caos": 8 } },
+        { "rotulo": "Dar carona pra galera",               "impacto": { "rs": 60, "energia": -10, "rep": [ {"alvo":"Cohab","delta":10}, {"alvo":"Rodoviaria","delta":8} ] } },
+        { "rotulo": "Esperar sentado no terminal",         "impacto": { "sanidade": -8, "energia": -4 } }
+      ]
+    },
+    {
+      "id": "E08", "nome": "Jogo do Brasil na TV",
+      "descricao": "A cidade inteira parou. Comércio fechado, bandeirinha na rua e fogos a cada lance.",
+      "bairros": [], "horarios": ["tarde", "noite"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Assistir no boteco com a galera",     "impacto": { "rs": -40, "sanidade": 22, "energia": -6, "caos": 6, "rep": [ {"alvo":"Torcida","delta":12} ] } },
+        { "rotulo": "Aproveitar a rua vazia pra rodar",    "impacto": { "rs": 140, "energia": -14, "sanidade": -6 } },
+        { "rotulo": "Vender bandeira e corneta na esquina","impacto": { "rs": 190, "energia": -18, "rep": [ {"alvo":"Camelos","delta":10} ] } }
+      ]
+    },
+    {
+      "id": "E09", "nome": "Bloco de Carnaval Fechou a Via",
+      "descricao": "Trio elétrico atravessado na avenida, purpurina no asfalto e ninguém indo a lugar nenhum.",
+      "bairros": ["Centro", "Itauna", "Marginal"], "horarios": ["tarde", "noite"], "climas": [], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Largar o carro e cair no bloco",      "impacto": { "sanidade": 26, "energia": -22, "fome": -12, "caos": 10 } },
+        { "rotulo": "Vender água gelada no meio da folia", "impacto": { "rs": 240, "energia": -24, "rep": [ {"alvo":"Camelos","delta":12} ] } },
+        { "rotulo": "Buzinar e tentar furar",              "impacto": { "sanidade": -10, "stars": 1, "caos": 12 } }
+      ]
+    },
+    {
+      "id": "E10", "nome": "Festa Junina na Quadra",
+      "descricao": "Bandeirinha, fogueira, quentão e a quadrilha ensaiando pela sexta vez.",
+      "bairros": ["SitioCapim", "Cohab", "VistaAlegre"], "horarios": ["noite"], "climas": [], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Comer no arraiá até não caber mais",  "impacto": { "rs": -35, "fome": 42, "sanidade": 14 } },
+        { "rotulo": "Trabalhar na barraca de pescaria",    "impacto": { "rs": 120, "energia": -16, "rep": [ {"alvo":"SitioCapim","delta":10} ] } },
+        { "rotulo": "Só passar e seguir viagem",           "impacto": { "sanidade": 3 } }
+      ]
+    },
+    {
+      "id": "E11", "nome": "Pancadão na Laje",
+      "descricao": "Paredão ligado no último, laje lotada e o grave chegando a três quarteirões de distância.",
+      "bairros": ["VistaAlegre", "Cohab"], "horarios": ["noite", "madrugada"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Subir e curtir",                      "impacto": { "sanidade": 20, "energia": -18, "caos": 8, "rep": [ {"alvo":"VistaAlegre","delta":8} ] } },
+        { "rotulo": "Vender gelada na laje",               "impacto": { "rs": 170, "energia": -16, "caos": 6 } },
+        { "rotulo": "Reclamar do barulho",                 "impacto": { "sanidade": -8, "rep": [ {"alvo":"VistaAlegre","delta":-10} ] } }
+      ]
+    },
+    {
+      "id": "E12", "nome": "Falta d'Água — Caminhão-Pipa",
+      "descricao": "Terceiro dia sem água. A fila do pipa dobra a esquina, com balde, galão e panela.",
+      "bairros": ["SitioCapim", "VistaAlegre", "Cohab"], "horarios": ["manha", "dia"], "climas": ["SolForte"], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Pegar seu balde na fila",             "impacto": { "energia": -12, "sanidade": -4 } },
+        { "rotulo": "Ajudar a distribuir",                 "impacto": { "energia": -18, "sanidade": 10, "rep": [ {"alvo":"SitioCapim","delta":12}, {"alvo":"VistaAlegre","delta":8} ] } },
+        { "rotulo": "Comprar galão no mercadinho",         "impacto": { "rs": -45, "energia": -4 } }
+      ]
+    },
+    {
+      "id": "E13", "nome": "Engavetamento na Marginal",
+      "descricao": "Quatro carros, um caminhão e o retrovisor de alguém na terceira faixa. Trânsito parado até a próxima ponte.",
+      "bairros": ["Marginal"], "horarios": ["manha", "tarde"], "climas": [], "peso": 1.1,
+      "opcoes": [
+        { "rotulo": "Esperar na fila igual todo mundo",    "impacto": { "energia": -10, "sanidade": -10 } },
+        { "rotulo": "Sair pelo acostamento",               "impacto": { "stars": 1, "caos": 10, "energia": -4 } },
+        { "rotulo": "Ajudar a sinalizar até chegar socorro","impacto": { "energia": -14, "sanidade": 8, "rep": [ {"alvo":"Marginal","delta":12} ] } }
+      ]
+    },
+    {
+      "id": "E14", "nome": "Show Surpresa na Praça",
+      "descricao": "Banda montou palco improvisado no coreto; a praça inteira cantando junto.",
+      "bairros": ["Centro", "Belvedere", "Itauna"], "horarios": ["noite"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Curtir o show",                       "impacto": { "sanidade": 14, "energia": -12, "fome": -5, "caos": 4 } },
+        { "rotulo": "Vender comida e bebida",              "impacto": { "rs": 130, "energia": -15, "caos": 4, "rep": [ {"alvo":"Centro","delta":6} ] } },
+        { "rotulo": "Subir no palco e mandar um freestyle","impacto": { "sanidade": 20, "rs": 70, "energia": -15, "caos": 4, "rep": [ {"alvo":"Radio","delta":10} ] } }
+      ]
+    },
+    {
+      "id": "E15", "nome": "Carro de Som Eleitoral",
+      "descricao": "Jingle no volume máximo desde as sete da manhã. 'Vinte e cinco mil, vereadora Helena!'",
+      "bairros": ["Cohab", "VistaAlegre", "Centro", "Rodoviaria"], "horarios": ["manha", "dia", "tarde"], "climas": [], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Aceitar o santinho e seguir",         "impacto": { "sanidade": -4, "rep": [ {"alvo":"FrentePopular","delta":4} ] } },
+        { "rotulo": "Dirigir o carro de som por um turno", "impacto": { "rs": 180, "energia": -20, "sanidade": -10, "rep": [ {"alvo":"FrentePopular","delta":12} ] } },
+        { "rotulo": "Xingar o carro de som",               "impacto": { "sanidade": 6, "rep": [ {"alvo":"FrentePopular","delta":-8} ] } }
+      ]
+    },
+    {
+      "id": "E16", "nome": "Boi Solto na Pista",
+      "descricao": "Boi no meio da estrada de terra, olhando pra você com toda a calma do mundo.",
+      "bairros": ["SitioCapim"], "horarios": [], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Buzinar e esperar",                   "impacto": { "energia": -4, "sanidade": -2 } },
+        { "rotulo": "Sair do carro e tocar o boi",         "impacto": { "energia": -10, "sanidade": 6, "rep": [ {"alvo":"SitioCapim","delta":10} ] } },
+        { "rotulo": "Desviar pelo mato",                   "impacto": { "saude": -5, "rs": -60, "caos": 6 } }
+      ]
+    },
+    {
+      "id": "E17", "nome": "Ressaca do Mar",
+      "descricao": "Mar levou metade do quiosque e a água chegou no calçadão. Ninguém tira o pé.",
+      "bairros": ["Itauna"], "horarios": [], "climas": ["Tempestade", "Chuva"], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Ajudar o quiosque a salvar o material","impacto": { "energia": -18, "sanidade": 8, "rep": [ {"alvo":"Itauna","delta":14} ] } },
+        { "rotulo": "Ficar filmando a onda",               "impacto": { "sanidade": 5, "saude": -6, "caos": 6 } },
+        { "rotulo": "Cair fora antes de molhar o carro",   "impacto": { "energia": -4 } }
+      ]
+    },
+    {
+      "id": "E18", "nome": "Vizinho Fazendo Churrasco às 7h",
+      "descricao": "Cheiro de picanha e seresta às sete da manhã de domingo. Vanderlei acena com a pinça.",
+      "bairros": ["Centro", "VistaAlegre", "SitioCapim", "Belvedere", "MonteVerde", "Cohab"], "horarios": ["manha"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Aceitar e comer",                     "impacto": { "fome": 38, "sanidade": 8, "energia": 8 } },
+        { "rotulo": "Reclamar do barulho",                 "impacto": { "sanidade": -4 } },
+        { "rotulo": "Levar a bebida e ficar",              "impacto": { "rs": -25, "sanidade": 10, "energia": 4 } }
+      ]
+    },
+    {
+      "id": "E19", "nome": "Mutirão contra a Dengue",
+      "descricao": "Agente de saúde de porta em porta, pedindo pra virar o balde e limpar a calha.",
+      "bairros": ["VistaAlegre", "Cohab", "SitioCapim"], "horarios": ["manha", "dia"], "climas": ["Chuva", "Garoa"], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Ajudar no mutirão",                   "impacto": { "energia": -14, "sanidade": 8, "saude": 4, "rep": [ {"alvo":"Cohab","delta":12} ] } },
+        { "rotulo": "Dizer que depois você olha",          "impacto": { "saude": -6, "sanidade": -2 } },
+        { "rotulo": "Doar material pro posto",             "impacto": { "rs": -60, "sanidade": 10, "rep": [ {"alvo":"VistaAlegre","delta":10} ] } }
+      ]
+    },
+    {
+      "id": "E20", "nome": "Fila do Banco Virando a Esquina",
+      "descricao": "Dia de pagamento. Fila do lado de fora, sol na cabeça e um segurança dizendo 'tá andando'.",
+      "bairros": ["Centro", "Rodoviaria"], "horarios": ["manha", "dia"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Encarar a fila",                      "impacto": { "energia": -12, "sanidade": -10 } },
+        { "rotulo": "Guardar lugar pros outros por uma grana","impacto": { "rs": 90, "energia": -16, "sanidade": -4 } },
+        { "rotulo": "Resolver tudo pelo aplicativo",       "impacto": { "sanidade": 6, "energia": -2 } }
+      ]
+    },
+    {
+      "id": "E21", "nome": "Pipa com Cerol na Fiação",
+      "descricao": "Linha atravessada na rua na altura do pescoço. A molecada assobia de longe pra avisar.",
+      "bairros": ["VistaAlegre", "Cohab", "MonteVerde"], "horarios": ["tarde"], "climas": ["SolForte", "SolLeve"], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Frear e tirar a linha da via",        "impacto": { "energia": -6, "sanidade": 6, "rep": [ {"alvo":"VistaAlegre","delta":8} ] } },
+        { "rotulo": "Passar rente e torcer",               "impacto": { "saude": -20, "caos": 10 } },
+        { "rotulo": "Dar bronca na molecada",              "impacto": { "sanidade": -4, "rep": [ {"alvo":"VistaAlegre","delta":-6} ] } }
+      ]
+    },
+    {
+      "id": "E22", "nome": "Carreata da Torcida",
+      "descricao": "Bandeirão na janela, buzina em coro e a avenida virando arquibancada rumo ao campo.",
+      "bairros": ["Cohab", "Centro", "Marginal"], "horarios": ["tarde", "noite"], "climas": [], "peso": 0.9,
+      "opcoes": [
+        { "rotulo": "Entrar na carreata",                  "impacto": { "sanidade": 18, "energia": -10, "caos": 12, "rep": [ {"alvo":"Torcida","delta":16} ] } },
+        { "rotulo": "Vender bandeira no meio da rua",      "impacto": { "rs": 160, "energia": -14, "rep": [ {"alvo":"Camelos","delta":8} ] } },
+        { "rotulo": "Fugir pela via paralela",             "impacto": { "energia": -6, "sanidade": -2 } }
+      ]
+    },
+    {
+      "id": "E23", "nome": "Procissão de Santa Luzia",
+      "descricao": "Andor na frente, vela na mão e a rua fechada em silêncio — respeito até dos motoboys.",
+      "bairros": ["Centro", "SitioCapim", "Cohab"], "horarios": ["tarde", "noite"], "climas": [], "peso": 0.8,
+      "opcoes": [
+        { "rotulo": "Descer e acompanhar",                 "impacto": { "sanidade": 16, "energia": -8, "rep": [ {"alvo":"Centro","delta":8} ] } },
+        { "rotulo": "Esperar passar em silêncio",          "impacto": { "sanidade": 6, "energia": -4 } },
+        { "rotulo": "Buzinar pra passar",                  "impacto": { "sanidade": -12, "caos": 8, "rep": [ {"alvo":"Centro","delta":-12} ] } }
+      ]
+    },
+    {
+      "id": "E24", "nome": "Promoção Relâmpago no Mercadinho",
+      "descricao": "Carne pela metade do preço na última hora. Três pessoas disputando a mesma bandeja.",
+      "bairros": ["Cohab", "Rodoviaria", "VistaAlegre", "Centro"], "horarios": ["tarde", "noite"], "climas": [], "peso": 1.0,
+      "opcoes": [
+        { "rotulo": "Encarar o corredor e garantir a sua", "impacto": { "rs": -60, "fome": 40, "energia": -8, "sanidade": 8 } },
+        { "rotulo": "Deixar pra quem chegou primeiro",     "impacto": { "sanidade": 6, "rep": [ {"alvo":"Cohab","delta":8} ] } },
+        { "rotulo": "Comprar tudo e revender na laje",     "impacto": { "rs": 130, "energia": -14, "caos": 8, "rep": [ {"alvo":"Camelos","delta":6} ] } }
+      ]
+    }
+  ]
+}

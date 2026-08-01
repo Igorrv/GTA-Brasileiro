@@ -1,0 +1,14 @@
+{
+    "name": "Caos.Bootstrap",
+    "rootNamespace": "Caos.Bootstrap",
+    "references": [ "Caos.Core", "Caos.Data", "Caos.World", "Caos.Gameplay", "Caos.Save" ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

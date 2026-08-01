@@ -1,0 +1,55 @@
+name: Bug
+description: Algo quebrou no Editor, no build ou na jogabilidade
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Descreva o problema com passos claros. Anexe log do Console se possível.
+  - type: input
+    id: unity
+    attributes:
+      label: Versão do Unity
+      placeholder: "6000.5.2f1"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Onde ocorreu
+      options:
+        - Editor (PC)
+        - Device Simulator
+        - Android
+        - iOS
+        - Batchmode / smoke
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Play na cena Bootstrap
+        2. Entrar no carro com E
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      render: text

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ler a Bíblia do Mundo primeiro
+    url: https://github.com/caosstudio/cidade-do-caos/blob/main/docs/00-biblia-do-mundo.md
+    about: Fonte de verdade de nomes, números e escalas — evita issues duplicadas de design.

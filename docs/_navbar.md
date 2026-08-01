@@ -1,0 +1,4 @@
+- [GDD](README.md)
+- [Arquitetura](architecture.md)
+- [Roadmap](13-mvp-roadmap.md)
+- [Como rodar](home.md#atalhos-rápidos)

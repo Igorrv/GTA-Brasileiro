@@ -1,0 +1,12 @@
+{
+  "items": [
+    { "id": "Caminhoneiros", "nome": "União dos Caminhoneiros do Caos",  "corHex": "#2E5A88", "lider": "Seu Otacílio",             "territorio": "Polo Monte Verde + estradas e o pátio do Km 12" },
+    { "id": "Milicia",       "nome": "Milícia Escudo",                   "corHex": "#0F0F12", "lider": "Coronel Bento",            "territorio": "Centro + Vista Alegre (gato de TV, gás e 'segurança')" },
+    { "id": "Motoclube",     "nome": "Motoclube Cavaleiros do Asfalto",  "corHex": "#8B1A1A", "lider": "Tavinho",                  "territorio": "Corredores da Marginal + orla de Itaúna" },
+    { "id": "FrentePopular", "nome": "Frente Popular de São Genésio",    "corHex": "#1F7A2F", "lider": "Vereadora Helena Velasco", "territorio": "Jardim Belvedere + Câmara Municipal + COHAB em ano eleitoral" },
+    { "id": "Camelos",       "nome": "Sindicato dos Camelôs do Calçadão","corHex": "#C77B4E", "lider": "Tia Marlene",              "territorio": "Calçadão do Centro + camelódromo da Rodoviária" },
+    { "id": "Torcida",       "nome": "Torcida Organizada Fúria Genésio", "corHex": "#D32F2F", "lider": "Presidente Fumaça",        "territorio": "Campo de várzea da COHAB + arquibancada + carreata" },
+    { "id": "Fiscais",       "nome": "Fiscalização da Prefeitura (o rapa)","corHex": "#546E7A","lider": "Doutor Wilson",           "territorio": "Onde tiver barraca sem alvará — principalmente na Rodoviária" },
+    { "id": "Radio",         "nome": "Sistema Caos de Comunicação",      "corHex": "#7E57C2", "lider": "Locutor Zezinho da Voz",   "territorio": "As antenas do morro e o rádio ligado da cidade inteira" }
+  ]
+}

@@ -1,0 +1,40 @@
+name: Feature / Design
+description: Nova mecânica, conteúdo ou mudança de design
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Gameplay / sistemas
+        - Cidade / arte procedural
+        - Veículos / trânsito
+        - UI / mobile
+        - Missões / eventos / narrativa
+        - Performance
+        - Documentação
+        - Repo / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou oportunidade
+      description: O que o jogador sente falta?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Como resolver? Cite a Bíblia do Mundo se afetar números/nomes.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      placeholder: |
+        - [ ] …

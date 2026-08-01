@@ -1,0 +1,94 @@
+{
+  "items": [
+    {
+      "id": "caos_fm", "nome": "Caos FM 92,5", "genero": "funk", "corHex": "#E91E63", "bpm": 130,
+      "slogan": "O grave que faz tremer a laje inteira.",
+      "faixas": [
+        { "titulo": "Bota o Pé na Laje",      "artista": "MC Tijolinho",        "bpm": 130, "semente": 101 },
+        { "titulo": "Automotivo do Beco 3",   "artista": "DJ Pretin do Morro",  "bpm": 138, "semente": 102 },
+        { "titulo": "Vista Alegre é Nóis",    "artista": "MC Bebel & MC Nêgo",  "bpm": 128, "semente": 103 },
+        { "titulo": "Montagem Rodoviária",    "artista": "DJ Kabeção",          "bpm": 142, "semente": 104 }
+      ],
+      "locucoes": [
+        "Caos FM, noventa e dois e meio! O paredão da cidade!",
+        "Alô, Vista Alegre! Alô, COHAB! Tá tocando o quê? Tá tocando o pesado!",
+        "Sobe o grave aí, DJ, que o busão tá sacudindo!"
+      ]
+    },
+    {
+      "id": "poeira_fm", "nome": "Poeira FM 101,3", "genero": "sertanejo", "corHex": "#C79A3C", "bpm": 96,
+      "slogan": "A rádio da estrada, do gado e do coração partido.",
+      "faixas": [
+        { "titulo": "Camionete Marrom",       "artista": "Zé Tonho & Marreco",  "bpm": 92,  "semente": 201 },
+        { "titulo": "Boiadeiro de Segunda",   "artista": "Duduca do Sítio",     "bpm": 100, "semente": 202 },
+        { "titulo": "Modão do Km 12",         "artista": "Irmãos Capim",        "bpm": 88,  "semente": 203 },
+        { "titulo": "Chorei na Fazenda",      "artista": "Nêgo Véio do Berrante","bpm": 104,"semente": 204 }
+      ],
+      "locucoes": [
+        "Poeira FM, cento e um vírgula três — pegando de São Genésio até a divisa!",
+        "Recado pro Seu Otacílio: a carreta tá liberada no pátio, viu?",
+        "Modão pra quem tá voltando de viagem com o sol na cara."
+      ]
+    },
+    {
+      "id": "arrasta_pe", "nome": "Rádio Arrasta-Pé 88,7", "genero": "forro", "corHex": "#E67E22", "bpm": 112,
+      "slogan": "Sanfona, zabumba e triângulo — o resto é conversa.",
+      "faixas": [
+        { "titulo": "Xote da Feira Livre",    "artista": "Trio Pé de Serra",    "bpm": 112, "semente": 301 },
+        { "titulo": "Baião do Terminal",      "artista": "Sanfoneiro do Norte", "bpm": 118, "semente": 302 },
+        { "titulo": "Xaxado de São João",     "artista": "Zabumba de Ouro",     "bpm": 124, "semente": 303 },
+        { "titulo": "Arrasta-Pé na Quermesse","artista": "Forrozão do Capim",   "bpm": 116, "semente": 304 }
+      ],
+      "locucoes": [
+        "Arrasta-Pé oitenta e oito e sete, a rádio que não deixa ninguém sentado!",
+        "Tem quermesse no Sítio do Capim hoje, com quentão e pescaria!",
+        "Segura a sanfona que agora vem xote pra dançar coladinho."
+      ]
+    },
+    {
+      "id": "boemia_am", "nome": "Boemia AM 720", "genero": "mpb", "corHex": "#7E57C2", "bpm": 78,
+      "slogan": "Samba, choro e uma dose de melancolia bem servida.",
+      "faixas": [
+        { "titulo": "Marginal às Seis da Tarde","artista": "Bituca do Cavaco",  "bpm": 76,  "semente": 401 },
+        { "titulo": "Chorinho do Calçadão",   "artista": "Regional do Centro",  "bpm": 84,  "semente": 402 },
+        { "titulo": "Samba do Rio Sujo",      "artista": "Velha Guarda Genésio","bpm": 72,  "semente": 403 },
+        { "titulo": "Itaúna de Madrugada",    "artista": "Nara do Violão",      "bpm": 68,  "semente": 404 }
+      ],
+      "locucoes": [
+        "Boemia setecentos e vinte, ondas médias, a trilha de quem trabalha à noite.",
+        "Pra quem tá pegando o segundo turno agora, essa é sua.",
+        "A cidade dorme mal, mas dorme ao som da Boemia."
+      ]
+    },
+    {
+      "id": "monte_sion", "nome": "Rádio Monte Sião 105,9", "genero": "gospel", "corHex": "#2E7D32", "bpm": 86,
+      "slogan": "A palavra que conforta no trânsito das seis.",
+      "faixas": [
+        { "titulo": "Hoje Vai Dar Certo",     "artista": "Ministério Vista Alegre","bpm": 86,"semente": 501 },
+        { "titulo": "Louvor da Manhã",        "artista": "Coral Bom Retiro",    "bpm": 80,  "semente": 502 },
+        { "titulo": "Vencendo o Km a Km",     "artista": "Irmão Adilson",       "bpm": 90,  "semente": 503 }
+      ],
+      "locucoes": [
+        "Paz do Senhor, motorista. Cento e cinco vírgula nove, Monte Sião.",
+        "Uma palavra pra quem tá no engarrafamento da Marginal agora.",
+        "Culto hoje às dezenove e trinta, todos são bem-vindos."
+      ]
+    },
+    {
+      "id": "jornal_caos", "nome": "Caos Notícias 640", "genero": "noticias", "corHex": "#455A64", "bpm": 0,
+      "slogan": "A informação que chega antes do boato — às vezes.",
+      "faixas": [
+        { "titulo": "Boletim do Trânsito",    "artista": "Redação Caos",        "bpm": 0,   "semente": 601 },
+        { "titulo": "Plantão Policial",       "artista": "Redação Caos",        "bpm": 0,   "semente": 602 },
+        { "titulo": "Previsão do Tempo",      "artista": "Redação Caos",        "bpm": 0,   "semente": 603 }
+      ],
+      "locucoes": [
+        "Trânsito parado na Marginal do Rio Sujo, três quilômetros de lentidão.",
+        "Prefeitura anuncia recapeamento da Avenida Brasil. De novo.",
+        "IPC-Caos sobe pela terceira semana seguida; o pastel já custa mais que o almoço.",
+        "Blitz da Lei Seca montada na saída da orla. Documento na mão, pessoal.",
+        "Falta d'água programada no Sítio do Capim; caminhão-pipa atende a partir das dez."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "items": [
+    {
+      "id": "M00", "tipo": "Principal", "titulo": "Bem-vindo a São Genésio", "dador": "tia_marlene",
+      "recompensaRs": 60, "recompensaXp": 25, "faccao": "", "preRequisitos": [],
+      "objetivos": [
+        { "tipo": "ir", "alvo": "barraca_marlene", "quantidade": 1, "local": "Rodoviaria" }
+      ]
+    },
+    {
+      "id": "M01", "tipo": "Principal", "titulo": "Chegada de Van", "dador": "tonho_van",
+      "recompensaRs": 0, "recompensaXp": 50, "faccao": "", "preRequisitos": ["M00"],
+      "objetivos": [
+        { "tipo": "ir",    "alvo": "van_tonho", "quantidade": 1, "local": "Rodoviaria" },
+        { "tipo": "levar", "alvo": "jogador",   "quantidade": 1, "local": "Centro" }
+      ]
+    },
+    {
+      "id": "M02", "tipo": "Principal", "titulo": "Primeira Corrida do VaiJá", "dador": "app_vaija",
+      "recompensaRs": 120, "recompensaXp": 90, "faccao": "", "preRequisitos": ["M01"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "encomenda", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar",   "alvo": "encomenda", "quantidade": 1, "local": "Belvedere" }
+      ]
+    },
+    {
+      "id": "M03", "tipo": "Principal", "titulo": "A Portaria Não Deixa Subir", "dador": "app_vaija",
+      "recompensaRs": 150, "recompensaXp": 120, "faccao": "", "preRequisitos": ["M02"],
+      "objetivos": [
+        { "tipo": "falar", "alvo": "porteiro",  "quantidade": 1, "local": "Belvedere" },
+        { "tipo": "levar", "alvo": "encomenda", "quantidade": 1, "local": "Belvedere" }
+      ]
+    },
+    {
+      "id": "M04", "tipo": "Secundaria", "titulo": "A Barraca da Tia Marlene", "dador": "tia_marlene",
+      "recompensaRs": 140, "recompensaXp": 100, "faccao": "Camelos", "preRequisitos": ["M02"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "insumos", "quantidade": 1, "local": "Rodoviaria" },
+        { "tipo": "levar",   "alvo": "insumos", "quantidade": 1, "local": "Centro" }
+      ]
+    },
+    {
+      "id": "M05", "tipo": "Faccao", "titulo": "Ó o Rapa!", "dador": "tia_marlene",
+      "recompensaRs": 200, "recompensaXp": 160, "faccao": "Camelos", "preRequisitos": ["M04"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "mercadoria", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar",   "alvo": "mercadoria", "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "M06", "tipo": "Secundaria", "titulo": "Botijão pra Dona Nice", "dador": "dona_nice",
+      "recompensaRs": 130, "recompensaXp": 90, "faccao": "", "preRequisitos": ["M03"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "botijao", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "botijao", "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "M07", "tipo": "Secundaria", "titulo": "Levar a Vó no Posto", "dador": "seu_valdo",
+      "recompensaRs": 160, "recompensaXp": 120, "faccao": "", "preRequisitos": ["M06"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "dona_zefa", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "dona_zefa", "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "M08", "tipo": "Secundaria", "titulo": "A Peça Que o Tio Bié Pediu", "dador": "tio_bie",
+      "recompensaRs": 190, "recompensaXp": 140, "faccao": "", "preRequisitos": ["M03"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "peca_usada", "quantidade": 1, "local": "MonteVerde" },
+        { "tipo": "levar",   "alvo": "peca_usada", "quantidade": 1, "local": "Centro" }
+      ]
+    },
+    {
+      "id": "M09", "tipo": "Faccao", "titulo": "Carga do Seu Otacílio", "dador": "seu_otacilio",
+      "recompensaRs": 320, "recompensaXp": 220, "faccao": "Caminhoneiros", "preRequisitos": ["M08"],
+      "objetivos": [
+        { "tipo": "ir",    "alvo": "patio_carreta", "quantidade": 1, "local": "MonteVerde" },
+        { "tipo": "levar", "alvo": "carga",         "quantidade": 1, "local": "SitioCapim" }
+      ]
+    },
+    {
+      "id": "M10", "tipo": "Secundaria", "titulo": "Som pro Pancadão da Laje", "dador": "mc_tijolinho",
+      "recompensaRs": 240, "recompensaXp": 180, "faccao": "Radio", "preRequisitos": ["M05"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "caixa_som", "quantidade": 1, "local": "Marginal" },
+        { "tipo": "levar",   "alvo": "caixa_som", "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "M11", "tipo": "Secundaria", "titulo": "Carreata da Fúria", "dador": "presidente_fumaca",
+      "recompensaRs": 260, "recompensaXp": 200, "faccao": "Torcida", "preRequisitos": ["M07"],
+      "objetivos": [
+        { "tipo": "ir",    "alvo": "concentracao", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar", "alvo": "bandeirao",    "quantidade": 1, "local": "Centro" }
+      ]
+    },
+    {
+      "id": "M12", "tipo": "Secundaria", "titulo": "Água de Coco pra Orla", "dador": "nego_veio",
+      "recompensaRs": 210, "recompensaXp": 150, "faccao": "", "preRequisitos": ["M06"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "coco_verde", "quantidade": 1, "local": "SitioCapim" },
+        { "tipo": "levar",   "alvo": "coco_verde", "quantidade": 1, "local": "Itauna" }
+      ]
+    },
+    {
+      "id": "M13", "tipo": "Secundaria", "titulo": "Madrugada na Marginal", "dador": "app_vaija",
+      "recompensaRs": 300, "recompensaXp": 210, "faccao": "", "preRequisitos": ["M09"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "passageiro", "quantidade": 1, "local": "Itauna" },
+        { "tipo": "levar",   "alvo": "passageiro", "quantidade": 1, "local": "Marginal" }
+      ]
+    },
+    {
+      "id": "M14", "tipo": "Faccao", "titulo": "A Taxa da Milícia", "dador": "coronel_bento",
+      "recompensaRs": 380, "recompensaXp": 280, "faccao": "Milicia", "preRequisitos": ["M10", "M11"],
+      "objetivos": [
+        { "tipo": "falar", "alvo": "cobrador", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar", "alvo": "recado",   "quantidade": 1, "local": "Rodoviaria" }
+      ]
+    },
+    {
+      "id": "M15", "tipo": "Principal", "titulo": "Ninguém Solta a Mão", "dador": "tia_marlene",
+      "recompensaRs": 450, "recompensaXp": 340, "faccao": "Camelos", "preRequisitos": ["M13", "M14"],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "abaixo_assinado", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "abaixo_assinado", "quantidade": 1, "local": "Belvedere" }
+      ]
+    },
+    {
+      "id": "M16", "tipo": "Principal", "titulo": "São Genésio é Nossa", "dador": "cidade",
+      "recompensaRs": 800, "recompensaXp": 600, "faccao": "", "preRequisitos": ["M15"],
+      "objetivos": [
+        { "tipo": "ir",    "alvo": "praca_matriz", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar", "alvo": "cidade",       "quantidade": 1, "local": "Itauna" }
+      ]
+    }
+  ]
+}
