@@ -39,7 +39,7 @@ crashlytics-build.properties
 
 # ===================== IDE / OS =====================
 .vs/
-.vscode/
+.vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
