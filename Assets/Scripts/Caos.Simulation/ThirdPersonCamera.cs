@@ -72,8 +72,9 @@ namespace Caos.Simulation
             if (GameInput.CameraOrbit)
             {
                 Vector2 o = GameInput.Orbit;
-                _yaw   += o.x * orbitSens;
-                _pitch -= o.y * orbitSens;
+                float sens = orbitSens * SettingsMenu.Sensibilidade;
+                _yaw   += o.x * sens;
+                _pitch -= o.y * sens * (SettingsMenu.InverterY ? -1f : 1f);
                 _pitch  = Mathf.Clamp(_pitch, minPitch, maxPitch);
             }
 

@@ -1,7 +1,10 @@
 {
     "name": "Caos.Simulation",
     "rootNamespace": "Caos.Simulation",
-    "references": [ "Caos.Core", "Caos.Data", "Caos.World", "Caos.Gameplay", "Caos.Save" ],
+    "references": [
+        "Caos.Core", "Caos.Data", "Caos.World", "Caos.Gameplay", "Caos.Save",
+        "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

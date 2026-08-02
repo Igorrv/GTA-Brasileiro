@@ -109,6 +109,15 @@ namespace Caos.Simulation
             Toast("Jogo salvo.");
         }
 
+        private SettingsMenu _ajustes;
+
+        /// <summary>Abre a tela de ajustes por cima da pausa (o jogo continua congelado).</summary>
+        private void AbrirAjustes()
+        {
+            if (_ajustes == null) _ajustes = gameObject.AddComponent<SettingsMenu>();
+            _ajustes.Alternar();
+        }
+
         private void Sair()
         {
             Salvar();
@@ -159,12 +168,13 @@ namespace Caos.Simulation
 
             Botao(rt, font, "CONTINUAR", -20f, Alternar);
             Botao(rt, font, "SALVAR AGORA", -95f, Salvar);
-            Botao(rt, font, "SAIR DO JOGO", -170f, Sair);
+            Botao(rt, font, "AJUSTES", -170f, AbrirAjustes);
+            Botao(rt, font, "SAIR DO JOGO", -245f, Sair);
 
-            var ctrl = Titulo(rt, font, kControles, 21, new Color(0.72f, 0.72f, 0.75f), -290f);
+            var ctrl = Titulo(rt, font, kControles, 21, new Color(0.72f, 0.72f, 0.75f), -350f);
             ctrl.lineSpacing = 1.25f;
 
-            _toast = Titulo(rt, font, "", 22, new Color(0.55f, 0.95f, 0.6f), -430f);
+            _toast = Titulo(rt, font, "", 22, new Color(0.55f, 0.95f, 0.6f), -470f);
 
             _painel.SetActive(false);
         }

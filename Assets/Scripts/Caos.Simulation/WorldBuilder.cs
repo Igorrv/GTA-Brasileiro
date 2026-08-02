@@ -222,6 +222,7 @@ namespace Caos.Simulation
             BuildLifecycle(playerT, vehicleT, police);
             BuildRoubo(playerT, link, vehicle, vehicleT);
             BuildPause();
+            BuildPosProcessamento();
 
             var audio = BuildAudio(vehicle, link);
             BuildMissions(playerT, link, vehicleT, audio);
@@ -513,6 +514,14 @@ namespace Caos.Simulation
         {
             var go = new GameObject("[Pausa]");
             go.AddComponent<PauseMenu>();
+        }
+
+        /// <summary>Pós-processamento: bloom, tonemapping, color grading e vinheta seguindo a hora.</summary>
+        private void BuildPosProcessamento()
+        {
+            var go = new GameObject("[PosProcessamento]");
+            go.AddComponent<PostProcessing>().Init();
+            SettingsMenu.Aplicar();   // respeita a qualidade escolhida pelo jogador
         }
 
         // -------------------------------------------------------------- áudio procedural

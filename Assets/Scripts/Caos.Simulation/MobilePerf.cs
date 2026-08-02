@@ -56,6 +56,9 @@ namespace Caos.Simulation
             // ---- céu procedural + reflexo ambiente ----
             MontarCeu();
 
+            // preferências do jogador vêm por cima do perfil padrão
+            SettingsMenu.Carregar();
+
             // qual pipeline está de fato ativo — a cidade monta materiais em runtime e precisa casar
             var rp = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;
             string pipeline = rp != null ? rp.GetType().Name : "Built-in";
