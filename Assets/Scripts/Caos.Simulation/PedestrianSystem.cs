@@ -105,6 +105,23 @@ namespace Caos.Simulation
             if (_spawnAccum >= spawnInterval) { _spawnAccum = 0f; Fill(); }
         }
 
+        /// <summary>
+        /// Solta um pedestre correndo a partir de um ponto — é o motorista que acabou de ser tirado
+        /// do carro. Reaproveita o pool: ele vira só mais um na rua, mas assustado e rápido.
+        /// </summary>
+        public void SoltarFugitivo(Vector3 pos, Vector3 direcao)
+        {
+            if (_pool == null || _pool.InPool == 0) return;
+
+            var p = _pool.Get();
+            p.transform.position = pos;
+            p.dir      = new Vector3(direcao.x, 0f, direcao.z).normalized;
+            p.speed    = Random.Range(4.2f, 5.6f);   // corre, não passeia
+            p.pausaAte = 0f;
+            p.transform.rotation = Quaternion.LookRotation(p.dir, Vector3.up);
+            _active.Add(p);
+        }
+
         private void Fill()
         {
             while (_active.Count < maxActive && _pool.InPool > 0)

@@ -66,6 +66,31 @@ namespace Caos.Simulation
 
         public static Color CorDe(VehicleDto dto) => CityPalette.Parse(dto != null ? dto.corHex : null, new Color(0.75f, 0.15f, 0.15f));
 
+        /// <summary>Nome dado às peças de carroceria, para dar pra removê-las ao trocar de modelo.</summary>
+        public const string kMarcaCarroceria = "Carroceria#";
+
+        /// <summary>
+        /// Apaga a carroceria atual preservando o resto (rodas com WheelCollider, Rigidbody,
+        /// componentes). É o que permite o jogador <b>roubar um carro</b> sem recriar toda a física:
+        /// o corpo é trocado, o chassi continua o mesmo.
+        /// </summary>
+        public static void LimparCarroceria(Transform root)
+        {
+            for (int i = root.childCount - 1; i >= 0; i--)
+            {
+                var filho = root.GetChild(i);
+                if (filho.name.StartsWith(kMarcaCarroceria)) Object.Destroy(filho.gameObject);
+            }
+        }
+
+        /// <summary>Monta a carroceria marcada para remoção futura (usado na troca de veículo).</summary>
+        public static BoxCollider BuildBodyRemovivel(Transform root, VehicleDto dto, Color cor, bool rodasVisuais)
+        {
+            var suporte = new GameObject(kMarcaCarroceria + (dto != null ? dto.id : "generico"));
+            suporte.transform.SetParent(root, false);
+            return BuildBody(suporte.transform, dto, cor, rodasVisuais);
+        }
+
         /// <summary>Sorteia um modelo do catálogo com peso pela raridade (1 = comum na rua).</summary>
         public static VehicleDto SortearParaTrafego(GameCatalogs c, params string[] excluirClasses)
         {

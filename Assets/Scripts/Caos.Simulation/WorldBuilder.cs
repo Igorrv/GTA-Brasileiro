@@ -218,6 +218,7 @@ namespace Caos.Simulation
             BuildPeds(playerT);
             BuildTouch();
             BuildLifecycle(playerT, vehicleT, police);
+            BuildRoubo(playerT, link, vehicle, vehicleT);
             BuildPause();
 
             var audio = BuildAudio(vehicle, link);
@@ -497,6 +498,13 @@ namespace Caos.Simulation
         }
 
         // -------------------------------------------------------------- pausa
+        /// <summary>Roubo de carro: puxar o motorista e assumir o volante.</summary>
+        private void BuildRoubo(Transform player, PlayerVehicleLink link, VehicleController vehicle, Transform vehicleT)
+        {
+            var go = new GameObject("[Roubo]");
+            go.AddComponent<CarjackSystem>().Init(player, link, vehicle, vehicleT);
+        }
+
         private void BuildPause()
         {
             var go = new GameObject("[Pausa]");

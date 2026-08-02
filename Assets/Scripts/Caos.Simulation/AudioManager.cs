@@ -87,7 +87,8 @@ namespace Caos.Simulation
             _giroSuave = Mathf.Lerp(_giroSuave, giro, dt * 12f);
 
             // 0,62 na marcha lenta até 2,45 no corte: quase 2 oitavas de excursão
-            _motor.pitch  = Mathf.Lerp(0.62f, 2.45f, _giroSuave);
+            // o timbre do modelo desloca a faixa inteira: moto fica aguda, caminhão fica grave
+            _motor.pitch  = Mathf.Lerp(0.62f, 2.45f, _giroSuave) * _vehicle.Timbre;
             float carga   = Mathf.Clamp01(Mathf.Abs(GameInput.Move.y));
             _motor.volume = Mathf.Lerp(_motor.volume, Mathf.Lerp(0.16f, 0.42f, carga * 0.6f + _giroSuave * 0.4f), dt * 6f);
 
@@ -99,6 +100,9 @@ namespace Caos.Simulation
                 _motor.volume *= 0.45f;         // alívio do acelerador na troca
                 _giroSuave    *= 0.72f;         // e o giro cai junto
             }
+
+            // no corte de giro o motor engasga em vez de subir sem parar
+            if (_vehicle.NoCorte) _motor.pitch *= 0.94f + Mathf.Sin(Time.time * 60f) * 0.045f;
 
             // ---- pneu cantando ----
             bool cantando = _vehicle.Derrapando;

@@ -99,6 +99,34 @@ namespace Caos.Simulation
         public int   Marcha     => _marcha;
         public string MarchaTxt => _marcha == 0 ? "R" : _marcha.ToString();
         public bool  Derrapando { get; private set; }
+        /// <summary>Câmbio manual ligado (o jogador tocou no câmbio pelo menos uma vez).</summary>
+        public bool  Manual  { get; private set; }
+        /// <summary>Motor no corte de giro — o painel acende e o som "engasga".</summary>
+        public bool  NoCorte { get; private set; }
+
+        /// <summary>
+        /// Timbre do motor: 1 = tom de referência. Moto sobe quase uma oitava, caminhão desce meia.
+        /// É o que faz a CG soar como CG e a jamanta soar como jamanta usando o mesmo clipe.
+        /// </summary>
+        public float Timbre
+        {
+            get
+            {
+                if (Modelo == null) return 1f;
+                switch (Modelo.classe)
+                {
+                    case "Moto":        return 1.85f;
+                    case "Bicicleta":   return 1f;
+                    case "Caminhao":    return 0.55f;
+                    case "Onibus":      return 0.62f;
+                    case "Van":         return 0.80f;
+                    case "Caminhonete": return 0.78f;
+                    case "Esportivo":   return 1.25f;
+                    case "Rural":       return 0.60f;
+                    default:            return 1f;      // popular
+                }
+            }
+        }
 
         // ---- acesso p/ HUD/scanner ----
         public float TankLiters => tankLiters;
@@ -111,6 +139,7 @@ namespace Caos.Simulation
         public void ConfigureFromCatalog(VehicleDto dto)
         {
             if (dto == null) return;
+            Modelo      = dto;                       // timbre do motor e HUD leem daqui
             _rb.mass    = Mathf.Max(400f, dto.massa);
             _rb.linearDamping    = arrasto * 0.1f;
             tankLiters  = Mathf.Max(8f, dto.tanqueL);
@@ -144,6 +173,47 @@ namespace Caos.Simulation
             // carro sai da curva mais do que qualquer número de potência.
             _tracao = TracaoDe(dto);
             _ehMoto = dto.carroceria == "Moto" || dto.classe == "Moto";
+        }
+
+        /// <summary>Modelo atual — o HUD e o roubo de carro consultam.</summary>
+        public VehicleDto Modelo { get; private set; }
+
+        /// <summary>
+        /// Troca o veículo por outro modelo <b>sem recriar a física</b>: a carroceria é substituída,
+        /// as rodas são reposicionadas e os parâmetros vêm do novo catálogo. É isso que faz o roubo de
+        /// carro funcionar — você continua sendo o mesmo Rigidbody, só que agora é uma Kombi.
+        /// </summary>
+        public void TrocarModelo(VehicleDto dto, Color cor)
+        {
+            if (dto == null) return;
+
+            VehicleFactory.LimparCarroceria(transform);
+            ConfigureFromCatalog(dto);
+            VehicleFactory.BuildBodyRemovivel(transform, dto, cor, rodasVisuais: false);
+            Modelo = dto;
+
+            // reposiciona as rodas com a nova geometria (entre-eixos e bitola mudaram)
+            Vector3[] pos =
+            {
+                new Vector3(-halfTrack, 0f,  halfWheelBase),
+                new Vector3( halfTrack, 0f,  halfWheelBase),
+                new Vector3(-halfTrack, 0f, -halfWheelBase),
+                new Vector3( halfTrack, 0f, -halfWheelBase),
+            };
+            for (int i = 0; i < Wheels; i++)
+            {
+                if (_wheels[i] == null) continue;
+                _wheels[i].transform.localPosition = pos[i];
+                _wheels[i].radius = wheelRadius;
+                if (_meshes[i] != null)
+                    _meshes[i].localScale = new Vector3(wheelRadius * 2f, wheelRadius * 0.32f, wheelRadius * 2f);
+            }
+
+            _rb.centerOfMass = new Vector3(0f, -wheelRadius * 0.35f, halfWheelBase * 0.06f);
+            _fuel   = tankLiters * Random.Range(0.25f, 0.9f);   // carro roubado vem com o tanque que vier
+            _marcha = 1;
+            _rpm    = rpmMin;
+            Debug.Log($"[Veículo] Agora dirigindo: {dto.nome}.");
         }
 
         private void Start()
@@ -250,14 +320,24 @@ namespace Caos.Simulation
             if (acelerador < -0.1f && SpeedKmh < 3f) _marcha = 0;
             else if (_marcha == 0 && acelerador > 0.1f) _marcha = 1;
 
+            // troca manual: assim que o jogador toca no câmbio, o automático se cala
+            if (GameInput.MarchaAcima)  { Manual = true; if (_marcha < marchas.Length) _marcha++; }
+            if (GameInput.MarchaAbaixo) { Manual = true; if (_marcha > 0)              _marcha--; }
+
             if (_marcha > 0)
             {
                 float rel = marchas[Mathf.Clamp(_marcha - 1, 0, marchas.Length - 1)];
                 _rpm = Mathf.Lerp(_rpm, Mathf.Clamp(velRoda * rel * relacaoFinal + rpmMin, rpmMin, rpmMax),
                                   Time.fixedDeltaTime * 6f);
 
-                if (_rpm > rpmMax * 0.93f && _marcha < marchas.Length) _marcha++;        // sobe marcha
-                else if (_rpm < rpmMin * 1.35f && _marcha > 1)         _marcha--;        // reduz
+                if (!Manual)
+                {
+                    if (_rpm > rpmMax * 0.93f && _marcha < marchas.Length) _marcha++;    // sobe marcha
+                    else if (_rpm < rpmMin * 1.35f && _marcha > 1)         _marcha--;    // reduz
+                }
+                // no manual, esquecer de trocar bate no corte: o giro trava e o torque some
+                else if (_rpm >= rpmMax * 0.985f) NoCorte = true;
+                else NoCorte = false;
             }
             else
             {

@@ -113,6 +113,15 @@ namespace Caos.Simulation
             get { bool t = _qSit; _qSit = false; return Input.GetKeyDown(KeyCode.G) || t; }
         }
 
+        /// <summary>
+        /// Shift esquerdo / seta cima+Ctrl — subir marcha à mão. Enquanto o jogador não tocar em
+        /// nenhuma das duas, o câmbio segue automático; ao tocar, passa a manual e o motor pode bater
+        /// no corte se ele esquecer de trocar. É o mesmo esquema de jogo de corrida arcade.
+        /// </summary>
+        public static bool MarchaAcima  => Input.GetKeyDown(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt)
+                                        || Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus);
+        public static bool MarchaAbaixo => Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus);
+
         /// <summary>H — buzina (no Brasil, item de série).</summary>
         public static bool Horn
         {

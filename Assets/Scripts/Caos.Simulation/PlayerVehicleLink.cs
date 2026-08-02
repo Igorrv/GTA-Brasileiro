@@ -85,6 +85,14 @@ namespace Caos.Simulation
 
         private bool _entrando;
 
+        /// <summary>Entra no veículo direto, sem checar distância — usado após roubar um carro.</summary>
+        public void ForcarEntrada()
+        {
+            if (!_onFoot) return;
+            _onFoot = false;
+            ApplyControlState();
+        }
+
         private System.Collections.IEnumerator EntrarPelaPorta()
         {
             _entrando = true;
