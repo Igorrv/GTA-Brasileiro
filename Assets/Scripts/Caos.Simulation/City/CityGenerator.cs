@@ -206,6 +206,12 @@ namespace Caos.Simulation
                 CityPalette.Box(block, "Predio", new Vector3(x, h * 0.5f, 0f), new Vector3(w * 0.86f, h, lote.y * 0.8f),
                                 CityPalette.MatTex(Superficie.Fachada, baseCor, w * 0.86f, h));
 
+                // rodapé de umidade: a faixa escura que sobe da calçada em toda parede daqui.
+                // Vai numa casca fina por fora do prédio, então não precisa mexer na fachada.
+                CityPalette.Box(block, "Rodape", new Vector3(x, 2.2f, 0f),
+                                new Vector3(w * 0.87f, 4.4f, lote.y * 0.81f),
+                                CityPalette.MatTex(Superficie.Rodape, baseCor, w * 0.87f, 4.4f), 0f, false);
+
                 // térreo comercial: vitrine + toldo + letreiro
                 CityPalette.Box(block, "Vitrine", new Vector3(x, 1.9f, -lote.y * 0.4f - 0.08f),
                                 new Vector3(w * 0.82f, 3.4f, 0.16f),

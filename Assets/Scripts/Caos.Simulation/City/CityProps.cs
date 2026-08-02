@@ -176,16 +176,15 @@ namespace Caos.Simulation
             go.transform.localPosition = pos;
             go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
 
+            // muro pichado usa a textura de lambe-lambe (cartaz + tinta por cima); muro limpo, chapisco
+            var superficie = pichado && Random.value < 0.65f ? Superficie.Lambe : Superficie.Chapisco;
             CityPalette.Box(go.transform, "Parede", new Vector3(0f, altura * 0.5f, 0f), new Vector3(comprimento, altura, 0.25f),
-                            CityPalette.MatTex(Superficie.Chapisco, new Color(0.86f, 0.85f, 0.82f), comprimento, altura));
-            if (pichado && Random.value < 0.6f)
-            {
-                int n = Random.Range(1, 4);
-                for (int i = 0; i < n; i++)
-                    CityPalette.Box(go.transform, "Pichacao",
-                        new Vector3(Random.Range(-comprimento * 0.4f, comprimento * 0.4f), Random.Range(0.7f, altura - 0.5f), -0.14f),
-                        new Vector3(Random.Range(1.2f, 3.0f), Random.Range(0.35f, 0.7f), 0.03f), CityPalette.Pichacao, collide: false);
-            }
+                            CityPalette.MatTex(superficie, new Color(0.90f, 0.89f, 0.86f), comprimento, altura));
+
+            // rodapé de umidade também no muro
+            CityPalette.Box(go.transform, "RodapeMuro", new Vector3(0f, altura * 0.35f, 0f),
+                            new Vector3(comprimento * 0.998f, altura * 0.7f, 0.28f),
+                            CityPalette.MatTex(Superficie.Rodape, new Color(0.88f, 0.87f, 0.84f), comprimento, altura * 0.7f), 0f, false);
         }
 
         public static void CercaArame(Transform parent, Vector3 pos, float comprimento, float yaw)

@@ -21,7 +21,11 @@ namespace Caos.Simulation
         // ---- personagem ----
         Pele,         // poro fino + variação de tom
         Tecido,       // trama de camiseta
-        Jeans         // sarja com fio claro
+        Jeans,        // sarja com fio claro
+
+        // ---- envelhecimento ----
+        Rodape,       // faixa de umidade e mofo na base da parede
+        Lambe         // cartaz colado + pichação por cima
     }
 
     /// <summary>
@@ -70,6 +74,8 @@ namespace Caos.Simulation
                 case Superficie.Pele:     return 0.9f;
                 case Superficie.Tecido:   return 0.35f;
                 case Superficie.Jeans:    return 0.30f;
+                case Superficie.Rodape:   return 4f;
+                case Superficie.Lambe:    return 2.2f;
                 default:                  return 2.5f;   // reboco
             }
         }
@@ -125,6 +131,8 @@ namespace Caos.Simulation
                 case Superficie.Pele:     return Pele(x, y);
                 case Superficie.Tecido:   return Tecido(x, y);
                 case Superficie.Jeans:    return Jeans(x, y);
+                case Superficie.Rodape:   return Rodape(u, v, x, y);
+                case Superficie.Lambe:    return Lambe(u, v, x, y);
                 default:                  return Cinza(0.88f, 0.09f, x, y, 1.6f);   // reboco
             }
         }
@@ -344,6 +352,67 @@ namespace Caos.Simulation
             float ch = Mathf.Repeat((u - 0.08f) * 7.6f, 1f);
             bool letra = ch > 0.18f && ch < 0.78f && v > 0.22f && v < 0.66f && u > 0.06f && u < 0.94f;
             return letra ? new Color(0.08f, 0.08f, 0.09f) : new Color(0.94f, 0.94f, 0.93f);
+        }
+
+        // ================================================================== envelhecimento
+        /// <summary>
+        /// Rodapé de umidade: a faixa escura que sobe da calçada em toda parede brasileira, com
+        /// mofo esverdeado e escorrido de chuva descendo de cima. É provavelmente o detalhe que mais
+        /// diferencia "prédio no Brasil" de "prédio genérico de asset store".
+        /// </summary>
+        private static Color Rodape(float u, float v, int x, int y)
+        {
+            // v = 0 na base. A sujeira sobe irregular, com a borda superior serrilhada pelo ruído.
+            float alturaSujeira = 0.30f + Ruido(x, y, 1.6f) * 0.14f;
+            float sujo = Mathf.Clamp01((alturaSujeira - v) / Mathf.Max(0.01f, alturaSujeira));
+
+            // escorrido vertical de chuva: faixas finas que descem de cima
+            float escorrido = 0f;
+            float faixa = Mathf.Repeat(u * 9f + Ruido(x, y, 0.7f) * 2f, 1f);
+            if (faixa < 0.22f && v > 0.25f) escorrido = (1f - v) * 0.5f;
+
+            float mancha = Mathf.Clamp01(sujo * 0.85f + escorrido);
+            if (mancha < 0.02f) return new Color(1f, 1f, 1f);   // parte limpa: deixa o tint passar
+
+            // mofo puxa pro verde-escuro; barro puxa pro marrom
+            float verde = Ruido(x, y, 4f) * 0.5f + 0.5f;
+            var suja = Color.Lerp(new Color(0.42f, 0.44f, 0.36f), new Color(0.46f, 0.40f, 0.32f), verde);
+            return Color.Lerp(Color.white, suja, mancha * 0.92f);
+        }
+
+        /// <summary>
+        /// Muro de rua: lambe-lambe (cartaz colado, meio rasgado) com pichação por cima. Cartaz e
+        /// tinta são as duas camadas que todo muro de esquina tem no Brasil.
+        /// </summary>
+        private static Color Lambe(float u, float v, int x, int y)
+        {
+            var baseCor = new Color(0.80f, 0.79f, 0.76f);
+
+            // cartazes: retângulos colados em fileira, alguns rasgados na borda de baixo
+            float cu = Mathf.Repeat(u * 3f, 1f);
+            float cv = Mathf.Repeat(v * 2f, 1f);
+            bool naFolha = cu > 0.10f && cu < 0.88f && cv > 0.14f && cv < 0.82f;
+            if (naFolha)
+            {
+                float rasgo = Ruido(x, y, 6f);
+                if (!(cv < 0.24f && rasgo > 0.25f))     // pedaço arrancado embaixo
+                {
+                    int qual = Mathf.Abs(Mathf.RoundToInt(u * 3f + v * 2f)) % 3;
+                    baseCor = qual == 0 ? new Color(0.92f, 0.88f, 0.72f)      // papel amarelado
+                            : qual == 1 ? new Color(0.86f, 0.36f, 0.30f)      // cartaz vermelho
+                                        : new Color(0.35f, 0.52f, 0.78f);     // cartaz azul
+                    // linhas de texto do cartaz
+                    if (Mathf.Repeat(cv * 9f, 1f) < 0.34f && cv < 0.70f)
+                        baseCor *= 0.72f;
+                }
+            }
+
+            // pichação por cima de tudo: traço grosso e anguloso
+            float tag = Mathf.Abs(Mathf.Sin(u * 11f + Mathf.Sin(v * 7f) * 2.2f));
+            if (tag < 0.10f && v > 0.18f && v < 0.78f)
+                return new Color(0.10f, 0.10f, 0.12f);
+
+            return baseCor * (0.96f + Grao(x, y) * 0.04f);
         }
 
         // ================================================================== personagem
