@@ -76,6 +76,7 @@ namespace Caos.Simulation
             CityPalette.Box(go.transform, "FaixaE", new Vector3(-W * 0.51f, 0.75f, 0f), new Vector3(0.06f, 0.3f, L * 0.75f), CityPalette.Mat(Color.white), 0f, false);
             CityPalette.Box(go.transform, "FaixaD", new Vector3( W * 0.51f, 0.75f, 0f), new Vector3(0.06f, 0.3f, L * 0.75f), CityPalette.Mat(Color.white), 0f, false);
 
+            CaosLayers.Marcar(go, CaosLayers.Veiculo);
             var car = go.AddComponent<PoliceCar>();
             var giroA = CityPalette.Box(go.transform, "GiroA", new Vector3(-0.35f, 1.62f, 0.2f), new Vector3(0.45f, 0.18f, 0.3f), CityPalette.Mat(new Color(0.15f, 0.35f, 1f)), 0f, false);
             var giroB = CityPalette.Box(go.transform, "GiroB", new Vector3( 0.35f, 1.62f, 0.2f), new Vector3(0.45f, 0.18f, 0.3f), CityPalette.Mat(new Color(0.55f, 0.05f, 0.05f)), 0f, false);

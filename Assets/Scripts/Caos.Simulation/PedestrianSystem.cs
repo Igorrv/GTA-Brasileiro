@@ -64,6 +64,7 @@ namespace Caos.Simulation
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true;
 
+            CaosLayers.Marcar(go, CaosLayers.Pedestre);
             var p = go.AddComponent<Pedestrian>();
             go.SetActive(false);
             return p;

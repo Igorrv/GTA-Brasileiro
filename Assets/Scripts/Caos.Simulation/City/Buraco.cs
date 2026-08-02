@@ -53,6 +53,7 @@ namespace Caos.Simulation
             trigger.size   = new Vector3(raio * 2f, 1.2f, raio * 2f);
             trigger.center = new Vector3(0f, 0.5f, 0f);
 
+            CaosLayers.Marcar(go, CaosLayers.Gatilho);
             var b = go.AddComponent<Buraco>();
             b.profundidade = fundura;
             return b;

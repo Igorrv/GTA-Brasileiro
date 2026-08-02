@@ -71,6 +71,7 @@ namespace Caos.Simulation
             // gente ao volante: sem isso o trânsito é carcaça vazia e o roubo não faz sentido
             VehicleFactory.Condutor(go.transform, dto);
 
+            CaosLayers.Marcar(go, CaosLayers.Veiculo);
             var car = go.AddComponent<TrafficCar>();
             car.dto = dto;
             car.ehMoto = dto != null && (dto.classe == "Moto" || dto.carroceria == "Moto");

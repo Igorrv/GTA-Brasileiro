@@ -175,6 +175,7 @@ namespace Caos.Simulation
 
         private void Build(GameCatalogs catalogs)
         {
+            CaosLayers.Resolver();
             if (_loadingText != null) _loadingText.text = "Levantando os quarteirões de São Genésio...";
 
             // ---- cidade ----
@@ -185,6 +186,7 @@ namespace Caos.Simulation
             // a cidade nasce da semente da sessão: mesma semente = mesmo mundo em todo cliente
             CityRuntime.GerarDeterministico(gen, GameSession.Semente);
 
+            CaosLayers.Marcar(cityGo, CaosLayers.Cidade);   // a cidade inteira sai do teste contra si mesma
             CityRuntime.Layout    = layout;
             CityRuntime.Generator = gen;
             Diag($"Cidade gerada (semente {CityRuntime.Semente}): {layout.N}x{layout.N} vias, {gen.Shops.Count} estabelecimentos, " +
@@ -283,6 +285,7 @@ namespace Caos.Simulation
 
             go.AddComponent<PlayerController>();
             go.AddComponent<PlayerActions>();     // agachar, sentar, comer/beber
+            CaosLayers.Marcar(go, CaosLayers.Jogador);
             return go.transform;
         }
 
@@ -305,6 +308,7 @@ namespace Caos.Simulation
             vc.ConfigureFromCatalog(dto);
             health = go.AddComponent<VehicleHealth>();
 
+            CaosLayers.Marcar(go, CaosLayers.Veiculo);
             t = go.transform;
             _nomeVeiculoJogador = dto != null ? dto.nome : "Veículo";
             Diag($"Veículo do jogador: {_nomeVeiculoJogador}.");

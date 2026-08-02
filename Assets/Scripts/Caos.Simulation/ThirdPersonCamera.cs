@@ -92,7 +92,7 @@ namespace Caos.Simulation
             Vector3 dir = desejada - foco;
             float dist = dir.magnitude;
             if (dist > 0.01f && Physics.SphereCast(foco, raioCamera, dir / dist, out RaycastHit hit,
-                                                   dist, ~0, QueryTriggerInteraction.Ignore))
+                                                   dist, CaosLayers.MascaraCamera, QueryTriggerInteraction.Ignore))
             {
                 if (!hit.collider.transform.IsChildOf(target))
                     desejada = foco + (dir / dist) * Mathf.Max(0.8f, hit.distance - folga);
