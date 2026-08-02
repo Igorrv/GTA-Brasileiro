@@ -72,6 +72,22 @@ namespace Caos.Simulation
         private bool  _built;
         private float _aderenciaLateral = 1.6f;
 
+        /// <summary>Qual eixo recebe torque. Muda completamente o comportamento na saída de curva.</summary>
+        private enum Tracao { Traseira, Dianteira, Integral }
+        private Tracao _tracao = Tracao.Traseira;
+        private bool   _ehMoto;
+
+        private static Tracao TracaoDe(VehicleDto dto)
+        {
+            if (dto.classe == "Caminhonete" && dto.id != null && dto.id.Contains("4x4")) return Tracao.Integral;
+            if (dto.classe == "Caminhonete" || dto.classe == "Caminhao" ||
+                dto.classe == "Onibus"      || dto.classe == "Rural")   return Tracao.Traseira;
+            if (dto.classe == "Esportivo")                               return Tracao.Traseira;
+            if (dto.classe == "Moto" || dto.classe == "Bicicleta")      return Tracao.Traseira;
+            // popular/táxi/app: os nacionais de hoje são dianteira
+            return dto.raridade >= 3 ? Tracao.Traseira : Tracao.Dianteira;
+        }
+
         public float SpeedKmh => _rb ? _rb.linearVelocity.magnitude * 3.6f : 0f;
         public float Fuel01   => tankLiters > 0f ? _fuel / tankLiters : 0f;
         public bool  IsEmpty  => _fuel <= 0.001f;
@@ -121,6 +137,13 @@ namespace Caos.Simulation
             // veículo alto e pesado rola mais: reforça a barra estabilizadora
             rigidezBarra = Mathf.Max(6000f, _rb.mass * 8f);
             freioMax     = Mathf.Max(2400f, _rb.mass * 2.4f);
+
+            // ---- tração por época/classe ----
+            // Popular moderno é dianteira (puxa e é estável); clássico e esportivo são traseiros
+            // (empurram e saem de traseira); picape e caminhão, traseira também. Isso muda como o
+            // carro sai da curva mais do que qualquer número de potência.
+            _tracao = TracaoDe(dto);
+            _ehMoto = dto.carroceria == "Moto" || dto.classe == "Moto";
         }
 
         private void Start()
@@ -186,6 +209,7 @@ namespace Caos.Simulation
             }
 
             FreioDeMao(freioMao);
+            InclinarSeMoto();
 
             if (GameInput.Refuel) Refuel();
         }
@@ -349,7 +373,43 @@ namespace Caos.Simulation
             _rpm = Mathf.Lerp(_rpm, 0f, Time.fixedDeltaTime * 2f);
         }
 
-        private void ApplyMotor(float t) { _wheels[RL].motorTorque = t; _wheels[RR].motorTorque = t; }
+        /// <summary>Distribui o torque conforme a tração do modelo.</summary>
+        private void ApplyMotor(float t)
+        {
+            switch (_tracao)
+            {
+                case Tracao.Dianteira:
+                    _wheels[FL].motorTorque = t; _wheels[FR].motorTorque = t;
+                    _wheels[RL].motorTorque = 0f; _wheels[RR].motorTorque = 0f;
+                    break;
+                case Tracao.Integral:
+                    // 40% na frente, 60% atrás: sai firme e ainda dá pra soltar a traseira
+                    _wheels[FL].motorTorque = t * 0.4f; _wheels[FR].motorTorque = t * 0.4f;
+                    _wheels[RL].motorTorque = t * 0.6f; _wheels[RR].motorTorque = t * 0.6f;
+                    break;
+                default:
+                    _wheels[FL].motorTorque = 0f; _wheels[FR].motorTorque = 0f;
+                    _wheels[RL].motorTorque = t;  _wheels[RR].motorTorque = t;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Moto inclina para dentro da curva. Sem isso ela faz curva "de pé", que é a coisa que mais
+        /// denuncia moto de protótipo. É inclinação visual aplicada ao corpo — a física de duas rodas
+        /// de verdade exigiria outro modelo, e para o ritmo deste jogo isso basta.
+        /// </summary>
+        private void InclinarSeMoto()
+        {
+            if (!_ehMoto) return;
+            float lateral = Vector3.Dot(_rb.linearVelocity, transform.right);
+            float alvo = Mathf.Clamp(-lateral * 2.4f, -32f, 32f) * Mathf.Clamp01(SpeedKmh / 25f);
+            _inclinacao = Mathf.MoveTowards(_inclinacao, alvo, 90f * Time.fixedDeltaTime);
+
+            var e = transform.eulerAngles;
+            transform.rotation = Quaternion.Euler(e.x, e.y, _inclinacao);
+        }
+        private float _inclinacao;
         private void ApplyBrake(float b) { for (int i = 0; i < Wheels; i++) _wheels[i].brakeTorque = b; }
 
         private void ConsumeFuel(float throttle)

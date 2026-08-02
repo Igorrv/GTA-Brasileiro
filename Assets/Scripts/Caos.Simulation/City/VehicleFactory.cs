@@ -95,8 +95,25 @@ namespace Caos.Simulation
             float cabW = W * 0.92f;
             float cabL = sedan ? L * 0.42f : L * 0.46f;
             float cabZ = sedan ? -L * 0.06f : -L * 0.02f;
-            CityPalette.Box(root, "Cabine", new Vector3(0f, hChassi + 0.28f + H * 0.20f, cabZ),
-                            new Vector3(cabW, H * 0.40f, cabL), mat, 0f, false);
+            float cabY = hChassi + 0.28f + H * 0.20f;
+
+            // teto em cápsula achatada: carro não tem quina no teto, e é essa curva que separa
+            // "carro" de "caixote com rodas" quando a câmera está atrás
+            var cabine = CityPalette.Capsule(root, "Cabine", new Vector3(0f, cabY, cabZ), cabW, cabL, mat);
+            cabine.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            cabine.transform.localScale    = new Vector3(cabW, cabL * 0.5f, H * 0.44f);
+
+            // capô e porta-malas: planos que quebram o volume único
+            CityPalette.Box(root, "Capo", new Vector3(0f, hChassi + 0.30f, cabZ + cabL * 0.5f + L * 0.14f),
+                            new Vector3(W * 0.94f, 0.08f, L * 0.26f), mat, 0f, false);
+            CityPalette.Box(root, "PortaMalas", new Vector3(0f, hChassi + 0.30f, cabZ - cabL * 0.5f - L * 0.11f),
+                            new Vector3(W * 0.94f, 0.08f, L * 0.20f), mat, 0f, false);
+
+            // para-lamas sobre as rodas (a "sobrancelha" que todo carro tem)
+            for (int s = -1; s <= 1; s += 2)
+            for (int f = -1; f <= 1; f += 2)
+                CityPalette.Box(root, "Paralama", new Vector3(s * W * 0.49f, hChassi * 0.35f + 0.30f, f * L * 0.33f),
+                                new Vector3(0.09f, 0.16f, L * 0.30f), mat, 0f, false);
 
             // vidros (para-brisa, traseiro e laterais numa peça só de cada lado)
             CityPalette.Box(root, "ParaBrisa", new Vector3(0f, hChassi + 0.28f + H * 0.20f, cabZ + cabL * 0.5f),
@@ -186,17 +203,87 @@ namespace Caos.Simulation
             return chassi;
         }
 
+        /// <summary>
+        /// Moto de verdade — a CG e a Biz são metade do trânsito brasileiro e mereciam mais que duas
+        /// caixas. Tem tanque em cápsula, banco em dois níveis (piloto e garupa), motor aparente entre
+        /// as rodas, garfo inclinado como o de moto real (~26° de cáster), escapamento saindo pelo
+        /// lado direito, paralama, guidão com manoplas e retrovisores.
+        /// </summary>
         private static GameObject Moto(Transform root, float L, float W, float H, Material mat)
         {
-            var chassi = CityPalette.Box(root, "Quadro", new Vector3(0f, H * 0.52f, 0f), new Vector3(W * 0.55f, H * 0.30f, L * 0.55f), mat);
-            CityPalette.Box(root, "Tanque", new Vector3(0f, H * 0.72f, L * 0.10f), new Vector3(W * 0.7f, H * 0.22f, L * 0.28f), mat, 0f, false);
-            CityPalette.Box(root, "Banco",  new Vector3(0f, H * 0.74f, -L * 0.16f), new Vector3(W * 0.6f, H * 0.12f, L * 0.34f), CityPalette.Mat(new Color(0.12f, 0.12f, 0.13f)), 0f, false);
-            CityPalette.Box(root, "Guidao", new Vector3(0f, H * 0.95f, L * 0.34f), new Vector3(W * 1.15f, 0.06f, 0.06f), CityPalette.Metal, 0f, false);
-            CityPalette.Cyl(root, "Garfo",  new Vector3(0f, H * 0.62f, L * 0.36f), 0.08f, H * 0.7f, CityPalette.Metal);
-            Roda(root, new Vector3(0f, 0.32f,  L * 0.38f), 0.64f, 0.16f);
-            Roda(root, new Vector3(0f, 0.32f, -L * 0.36f), 0.64f, 0.20f);
-            CityPalette.Box(root, "Farol", new Vector3(0f, H * 0.86f, L * 0.42f), new Vector3(0.22f, 0.18f, 0.08f), CityPalette.LuzAcesa, 0f, false);
+            var preto  = CityPalette.Mat(new Color(0.11f, 0.11f, 0.12f), 0.35f, 0.2f);
+            var cromo  = CityPalette.Mat(new Color(0.74f, 0.75f, 0.78f), 0.85f, 0.95f);
+            var motorM = CityPalette.Mat(new Color(0.45f, 0.46f, 0.48f), 0.55f, 0.85f);
+
+            // quadro central (é ele que carrega o colisor)
+            var chassi = CityPalette.Box(root, "Quadro", new Vector3(0f, H * 0.55f, -L * 0.02f),
+                                         new Vector3(W * 0.42f, H * 0.26f, L * 0.50f), mat);
+
+            // tanque: cápsula deitada, estreitando para trás
+            var tanque = CityPalette.Capsule(root, "Tanque", new Vector3(0f, H * 0.74f, L * 0.12f), W * 0.78f, L * 0.34f, mat);
+            tanque.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            tanque.transform.localScale    = new Vector3(W * 0.80f, L * 0.19f, H * 0.34f);
+
+            // banco em dois níveis: piloto mais baixo, garupa mais alta
+            CityPalette.Box(root, "BancoPiloto", new Vector3(0f, H * 0.72f, -L * 0.10f),
+                            new Vector3(W * 0.62f, H * 0.10f, L * 0.22f), preto, 0f, false);
+            CityPalette.Box(root, "BancoGarupa", new Vector3(0f, H * 0.78f, -L * 0.28f),
+                            new Vector3(W * 0.56f, H * 0.10f, L * 0.18f), preto, 0f, false);
+            CityPalette.Box(root, "Rabeta", new Vector3(0f, H * 0.70f, -L * 0.42f),
+                            new Vector3(W * 0.40f, H * 0.14f, L * 0.16f), mat, 0f, false);
+
+            // motor aparente + escapamento pelo lado direito
+            CityPalette.Box(root, "Motor", new Vector3(0f, H * 0.40f, L * 0.02f),
+                            new Vector3(W * 0.66f, H * 0.30f, L * 0.22f), motorM, 0f, false);
+            var escape = CityPalette.Capsule(root, "Escapamento", new Vector3(W * 0.34f, H * 0.30f, -L * 0.20f), 0.11f, L * 0.44f, cromo);
+            escape.transform.localRotation = Quaternion.Euler(84f, 0f, 0f);
+
+            // garfo inclinado (cáster) + coluna de direção
+            for (int s = -1; s <= 1; s += 2)
+            {
+                var haste = CityPalette.Capsule(root, "Garfo", new Vector3(s * W * 0.16f, H * 0.55f, L * 0.33f), 0.07f, H * 0.85f, cromo);
+                haste.transform.localRotation = Quaternion.Euler(26f, 0f, 0f);
+            }
+            CityPalette.Box(root, "Guidao", new Vector3(0f, H * 0.97f, L * 0.30f),
+                            new Vector3(W * 1.20f, 0.05f, 0.05f), preto, 0f, false);
+            for (int s = -1; s <= 1; s += 2)
+            {
+                CityPalette.Capsule(root, "Manopla", new Vector3(s * W * 0.52f, H * 0.97f, L * 0.30f), 0.055f, 0.13f, preto)
+                           .transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                CityPalette.Box(root, "Retrovisor", new Vector3(s * W * 0.46f, H * 1.12f, L * 0.30f),
+                                new Vector3(0.11f, 0.075f, 0.04f), preto, 0f, false);
+            }
+
+            // paralama dianteiro + farol + lanterna
+            CityPalette.Box(root, "Paralama", new Vector3(0f, H * 0.52f, L * 0.40f),
+                            new Vector3(W * 0.34f, 0.06f, L * 0.20f), mat, 0f, false);
+            CityPalette.Box(root, "Farol", new Vector3(0f, H * 0.88f, L * 0.40f),
+                            new Vector3(0.20f, 0.17f, 0.07f), CityPalette.LuzAcesa, 0f, false);
+            CityPalette.Box(root, "Lanterna", new Vector3(0f, H * 0.76f, -L * 0.49f),
+                            new Vector3(0.13f, 0.08f, 0.05f), CityPalette.Mat(new Color(0.72f, 0.09f, 0.09f), 0.85f, 0.1f), 0f, false);
+
+            RodaDeMoto(root, new Vector3(0f, 0.33f,  L * 0.38f), 0.66f, 0.13f);
+            RodaDeMoto(root, new Vector3(0f, 0.33f, -L * 0.36f), 0.66f, 0.17f);
             return chassi;
+        }
+
+        /// <summary>Roda de moto: pneu fino + disco de freio + raios sugeridos pela calota estreita.</summary>
+        private static void RodaDeMoto(Transform root, Vector3 pos, float diametro, float largura)
+        {
+            var pneu = CityPalette.Cyl(root, "Pneu", pos, diametro, largura,
+                                       CityPalette.MatTex(Superficie.Pneu, Color.white, diametro * 3f, largura * 3f, 0.12f, 0f));
+            pneu.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            pneu.transform.localScale    = new Vector3(diametro, largura * 0.5f, diametro);
+
+            var aro = CityPalette.Cyl(root, "Aro", pos, diametro * 0.62f, largura * 1.08f,
+                                      CityPalette.Mat(new Color(0.68f, 0.69f, 0.72f), 0.70f, 0.90f));
+            aro.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            aro.transform.localScale    = new Vector3(diametro * 0.62f, largura * 0.54f, diametro * 0.62f);
+
+            var disco = CityPalette.Cyl(root, "Disco", pos, diametro * 0.42f, largura * 1.3f,
+                                        CityPalette.Mat(new Color(0.35f, 0.36f, 0.38f), 0.75f, 0.9f));
+            disco.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            disco.transform.localScale    = new Vector3(diametro * 0.42f, largura * 0.10f, diametro * 0.42f);
         }
 
         private static GameObject Bicicleta(Transform root, float L, float W, float H, Material mat)

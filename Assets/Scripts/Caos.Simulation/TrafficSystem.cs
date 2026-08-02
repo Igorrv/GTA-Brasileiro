@@ -249,6 +249,11 @@ namespace Caos.Simulation
                 int eixo  = Random.value < 0.5f ? 0 : 1;
                 int linha = _layout.NearestLine(eixo == 0 ? alvo.x : alvo.z);
                 float dir = Random.value < 0.5f ? 1f : -1f;
+
+                // ônibus, caminhão e van só circulam em avenida — rua estreita de bairro não
+                // comporta um busão de 12 m, e ver um passando na viela quebra a ilusão na hora
+                bool grande = c.dto != null && (c.dto.classe == "Onibus" || c.dto.classe == "Caminhao" || c.dto.classe == "Van");
+                if (grande && !_layout.IsAvenue(linha)) continue;
                 float along = Mathf.Clamp(eixo == 0 ? alvo.z : alvo.x, -_layout.Extent + 20f, _layout.Extent - 20f);
 
                 Vector3 pos = PosicaoNaFaixa(eixo, linha, dir, along);
