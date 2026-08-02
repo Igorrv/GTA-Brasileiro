@@ -72,6 +72,19 @@ namespace Caos.Simulation
             m.SetFloat("_Glossiness", brilho);
             m.SetFloat("_Smoothness", brilho);
             m.SetFloat("_Metallic", metalico);
+
+            // Relevo: o normal map é o que transforma "desenho de tijolo" em tijolo — a luz passa a
+            // pegar de lado na junta e a superfície ganha profundidade sem um polígono a mais.
+            // O nome da propriedade (_BumpMap) é o mesmo no Standard e no URP Lit, então isto continua
+            // valendo depois da migração de pipeline.
+            var relevo = CityTextures.Normal(sup);
+            if (relevo != null)
+            {
+                m.EnableKeyword("_NORMALMAP");
+                m.SetTexture("_BumpMap", relevo);
+                m.SetFloat("_BumpScale", 1f);
+            }
+
             _cacheTex[key] = m;
             return m;
         }

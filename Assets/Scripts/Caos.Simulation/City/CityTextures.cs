@@ -82,9 +82,102 @@ namespace Caos.Simulation
 
         public static void Clear()
         {
-            foreach (var kv in _cache) if (kv.Value != null) Object.Destroy(kv.Value);
+            foreach (var kv in _cache)       if (kv.Value != null) Object.Destroy(kv.Value);
+            foreach (var kv in _cacheNormal) if (kv.Value != null) Object.Destroy(kv.Value);
             _cache.Clear();
+            _cacheNormal.Clear();
         }
+
+        // ================================================================== normal map
+        private static readonly Dictionary<Superficie, Texture2D> _cacheNormal = new Dictionary<Superficie, Texture2D>();
+
+        /// <summary>
+        /// Relevo de cada superfície, em metros de profundidade aparente. É o que separa "desenho de
+        /// tijolo" de "tijolo": a junta de argamassa afunda, o sulco do pneu afunda, a janela recua.
+        /// Zero desliga o normal map (superfície lisa de verdade, como vidro e placa).
+        /// </summary>
+        public static float Relevo(Superficie s)
+        {
+            switch (s)
+            {
+                case Superficie.Tijolo:   return 1.35f;   // junta funda: é o mais tridimensional de todos
+                case Superficie.Calcada:  return 0.95f;
+                case Superficie.Telha:    return 1.10f;
+                case Superficie.Pneu:     return 1.25f;
+                case Superficie.Metal:    return 0.85f;   // ondulação do zinco
+                case Superficie.Grade:    return 1.0f;
+                case Superficie.Chapisco: return 0.55f;
+                case Superficie.Asfalto:  return 0.45f;
+                case Superficie.Fachada:  return 0.70f;   // janela recuada + peitoril saliente
+                case Superficie.Vitrine:  return 0.40f;
+                case Superficie.Madeira:  return 0.35f;
+                case Superficie.Jeans:    return 0.30f;
+                case Superficie.Tecido:   return 0.25f;
+                case Superficie.Grama:    return 0.40f;
+                case Superficie.Areia:    return 0.30f;
+                case Superficie.Reboco:   return 0.30f;
+                case Superficie.Lambe:    return 0.35f;
+                case Superficie.Rodape:   return 0.20f;
+                default:                  return 0f;      // pele, pintura, vidro, placa: lisos
+            }
+        }
+
+        /// <summary>
+        /// Mapa de normais derivado da <b>própria textura de cor</b>: a luminância vira altura e o
+        /// gradiente vira a inclinação da superfície.
+        ///
+        /// Funciona porque os padrões foram desenhados com a sombra já embutida — junta de argamassa,
+        /// sulco de pneu e canaleta de telha são <i>mais escuros</i> exatamente por serem mais fundos.
+        /// Escrever um campo de altura separado para cada superfície daria o mesmo resultado com o
+        /// dobro do código e o dobro de chance de os dois saírem de sincronia.
+        /// </summary>
+        public static Texture2D Normal(Superficie s)
+        {
+            if (Relevo(s) <= 0f) return null;
+            if (_cacheNormal.TryGetValue(s, out var n) && n != null) return n;
+
+            var cor = Obter(s);
+            var px  = cor.GetPixels();
+
+            // altura = luminância percebida (o olho pesa o verde mais que o azul)
+            var altura = new float[kTam * kTam];
+            for (int i = 0; i < px.Length; i++)
+                altura[i] = px[i].r * 0.299f + px[i].g * 0.587f + px[i].b * 0.114f;
+
+            var saida = new Color[kTam * kTam];
+            float forca = Relevo(s) * 6f;
+
+            for (int y = 0; y < kTam; y++)
+            for (int x = 0; x < kTam; x++)
+            {
+                // Sobel com índice em anel: a borda casa com a oposta, então o normal também é tileável
+                float dx = (H(altura, x + 1, y - 1) + 2f * H(altura, x + 1, y) + H(altura, x + 1, y + 1))
+                         - (H(altura, x - 1, y - 1) + 2f * H(altura, x - 1, y) + H(altura, x - 1, y + 1));
+                float dy = (H(altura, x - 1, y + 1) + 2f * H(altura, x, y + 1) + H(altura, x + 1, y + 1))
+                         - (H(altura, x - 1, y - 1) + 2f * H(altura, x, y - 1) + H(altura, x + 1, y - 1));
+
+                var normal = new Vector3(-dx * forca, -dy * forca, 1f).normalized;
+                // de [-1,1] para [0,1], que é como o shader espera ler
+                saida[y * kTam + x] = new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f);
+            }
+
+            // linear = true: normal map NÃO é cor, e passar por correção de gama distorceria o relevo
+            n = new Texture2D(kTam, kTam, TextureFormat.RGBA32, true, linear: true)
+            {
+                name = "CaosNormal_" + s,
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+                anisoLevel = 4
+            };
+            n.SetPixels(saida);
+            n.Apply(true, false);
+
+            _cacheNormal[s] = n;
+            return n;
+        }
+
+        private static float H(float[] a, int x, int y)
+            => a[((y + kTam) % kTam) * kTam + ((x + kTam) % kTam)];
 
         // ==================================================================== desenho
         private static Texture2D Desenhar(Superficie s)
