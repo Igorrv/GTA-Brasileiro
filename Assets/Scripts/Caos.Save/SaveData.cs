@@ -11,6 +11,9 @@ namespace Caos.Save
         public float pFome, pSede, pEnergia, pSanidade, pSaude;
         // Economy
         public float eRs, eCaosCash, eIpc;
+        // Experiência
+        public float xXp;
+        public int   xNivel;
         // World
         public float wCaos;
         public int   wStars;

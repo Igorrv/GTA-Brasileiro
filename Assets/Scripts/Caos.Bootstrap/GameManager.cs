@@ -21,6 +21,7 @@ namespace Caos.Bootstrap
         // ---- serviços públicos (UI/outras camadas acessam via Instance ou ServiceLocator) ----
         public PlayerAttributes  Attributes { get; private set; }
         public EconomyService    Economy    { get; private set; }
+        public ExperienceService Experience { get; private set; }
         public ReputationService Reputation { get; private set; }
         public WorldStateService World      { get; private set; }
         public TimeOfDayService  Time       { get; private set; }
@@ -55,7 +56,11 @@ namespace Caos.Bootstrap
             World      = new WorldStateService();
             Attributes = new PlayerAttributes();
             Economy    = new EconomyService(Time);
+            Experience = new ExperienceService();
             Reputation = new ReputationService();
+
+            // XP das missões: o valor já existia no catálogo, mas não era creditado a ninguém
+            EventBus<MissaoConcluida>.Subscribe(e => Experience.Adicionar(e.xp, "missão " + e.id));
 
             // 2) registra os que já existem (permite UI conectar cedo)
             RegisterServices();
@@ -87,7 +92,7 @@ namespace Caos.Bootstrap
             var save = GameSession.NovoJogo ? null : SaveSystem.Load(GameSession.Slot);
             if (save != null)
             {
-                SaveSystem.Apply(save, Attributes, Economy, Reputation, World, Time, Missions);
+                SaveSystem.Apply(save, Attributes, Economy, Reputation, World, Time, Missions, Experience);
                 Debug.Log($"[GameManager] Slot {GameSession.Slot}: save restaurado.");
             }
             else
@@ -122,14 +127,14 @@ namespace Caos.Bootstrap
             if (_autosaveAccum >= kAutosaveInterval)
             {
                 _autosaveAccum = 0f;
-                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions);
+                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience);
             }
         }
 
         private void OnApplicationPause(bool paused)
         {
             if (paused && Ready)
-                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions);
+                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience);
         }
 
         private void RegisterServices()
@@ -139,6 +144,7 @@ namespace Caos.Bootstrap
             if (World != null)      ServiceLocator.Register(World);
             if (Attributes != null) ServiceLocator.Register(Attributes);
             if (Economy != null)    ServiceLocator.Register(Economy);
+            if (Experience != null) ServiceLocator.Register(Experience);
             if (Reputation != null) ServiceLocator.Register(Reputation);
             if (Catalogs != null)   ServiceLocator.Register(Catalogs);
             if (Impact != null)     ServiceLocator.Register(Impact);

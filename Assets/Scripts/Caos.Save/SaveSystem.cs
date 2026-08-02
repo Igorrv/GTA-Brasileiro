@@ -45,17 +45,18 @@ namespace Caos.Save
 
         // ------------------------------------------------------------------ gravar / ler
         public static void Capture(PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions)
-            => Capture(SlotAtual, attrs, econ, rep, world, time, missions);
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
+            => Capture(SlotAtual, attrs, econ, rep, world, time, missions, xp);
 
         public static void Capture(int slot, PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions)
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
         {
             var data = new SaveData
             {
                 pFome = attrs.Fome, pSede = attrs.Sede, pEnergia = attrs.Energia,
                 pSanidade = attrs.Sanidade, pSaude = attrs.Saude,
                 eRs = econ.Rs, eCaosCash = econ.CaosCash, eIpc = econ.IpcCaos,
+                xXp = xp != null ? xp.Xp : 0f, xNivel = xp != null ? xp.Nivel : 1,
                 wCaos = world.Caos, wStars = world.Stars,
                 wDistrict = world.CurrentDistrict.ToString(), wWeather = world.Weather.ToString(),
                 wHour = time.Hour, wDay = time.Day,
@@ -77,7 +78,7 @@ namespace Caos.Save
         }
 
         public static void Apply(SaveData d, PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions)
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
         {
             if (d == null) return;
             // saves da versão 1 não têm Sede: entra hidratado em vez de nascer morrendo de sede
@@ -90,6 +91,7 @@ namespace Caos.Save
             time.Hydrate(d.wHour, d.wDay);
             rep.Hydrate(FromSave(d.repFaction), FromSave(d.repDistrict));
             missions.Hydrate(d.missionsCompleted, d.missionsActive);
+            xp?.Hydrate(d.xXp, d.xNivel <= 0 ? 1 : d.xNivel);
             Debug.Log("[Save] Estado restaurado.");
         }
 

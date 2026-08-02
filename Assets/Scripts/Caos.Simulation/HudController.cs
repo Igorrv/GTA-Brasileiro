@@ -31,6 +31,7 @@ namespace Caos.Simulation
         private EconomyService    _econ;
         private WorldStateService _world;
         private TimeOfDayService  _time;
+        private ExperienceService _exp;
         private Font              _font;
 
         // valores em cache (atualizados por evento ou poll)
@@ -41,6 +42,8 @@ namespace Caos.Simulation
         private Image _barSaude, _barFome, _barSede, _barEnergia, _barSan;
         private Text  _valSaude, _valFome, _valSede, _valEnergia, _valSan;
         private Text  _moneyText, _clockText, _districtText, _streetText, _caosText, _wantedText;
+        private Text  _nivelText;
+        private Image _barXp;
         private readonly Image[] _estrelas = new Image[5];
         private GameObject _promptGo, _toastGo, _radioGo;
         private Text  _promptText, _toastText, _radioEstacao, _radioFaixa;
@@ -71,10 +74,12 @@ namespace Caos.Simulation
             ServiceLocator.TryGet(out _econ);
             ServiceLocator.TryGet(out _world);
             ServiceLocator.TryGet(out _time);
+            ServiceLocator.TryGet(out _exp);
 
             if (_attrs != null) { _fome = _attrs.Fome; _sede = _attrs.Sede; _energia = _attrs.Energia; _san = _attrs.Sanidade; _saude = _attrs.Saude; }
             if (_econ != null)  { _rs = _econ.Rs; _cc = _econ.CaosCash; }
             if (_world != null) { _caos = _world.Caos; _stars = _world.Stars; }
+            if (_exp != null) OnXp(new XpMudou { xp = _exp.Xp, nivel = _exp.Nivel, progresso = _exp.Progresso01 });
             RefreshAll();
         }
 
@@ -87,6 +92,8 @@ namespace Caos.Simulation
             EventBus<EstrelasMudou>.Subscribe(OnStars);
             EventBus<EventoDisparado>.Subscribe(OnEvento);
             EventBus<MissaoConcluida>.Subscribe(OnMissao);
+            EventBus<XpMudou>.Subscribe(OnXp);
+            EventBus<SubiuDeNivel>.Subscribe(OnNivel);
         }
         private void OnDisable()
         {
@@ -96,6 +103,8 @@ namespace Caos.Simulation
             EventBus<EstrelasMudou>.Unsubscribe(OnStars);
             EventBus<EventoDisparado>.Unsubscribe(OnEvento);
             EventBus<MissaoConcluida>.Unsubscribe(OnMissao);
+            EventBus<XpMudou>.Unsubscribe(OnXp);
+            EventBus<SubiuDeNivel>.Unsubscribe(OnNivel);
         }
         private void OnAttrs(AtributosMudou e)  { _fome = e.fome; _sede = e.sede; _energia = e.energia; _san = e.sanidade; _saude = e.saude; RefreshAttributes(); }
         private void OnMoney(DinheiroMudou e)   { _rs = e.rs; _cc = e.caosCash; RefreshMoney(); }
@@ -107,6 +116,13 @@ namespace Caos.Simulation
             RefreshCaosStars();
             if (subiu) Notificar(PoliceSystem.NomeDoNivel(_stars), new Color(1f, 0.45f, 0.4f));
         }
+        private void OnXp(XpMudou e)
+        {
+            if (_barXp != null) _barXp.fillAmount = e.progresso;
+            if (_nivelText != null && _exp != null) _nivelText.text = $"Nível {e.nivel}  ·  {_exp.Titulo}";
+        }
+        private void OnNivel(SubiuDeNivel e) => Notificar($"Subiu para o nível {e.nivel} — {e.titulo}", kOuro);
+
         private void OnEvento(EventoDisparado e) => Notificar(e.nome + " — " + e.opcao, new Color(0.75f, 0.85f, 1f));
         private void OnMissao(MissaoConcluida e) => Notificar($"Missão concluída  ·  +R$ {e.rs:F0}", new Color(0.6f, 1f, 0.65f));
 
@@ -268,9 +284,34 @@ namespace Caos.Simulation
             att.anchorMin = new Vector2(0, 1); att.anchorMax = new Vector2(0, 1);
             att.pivot = new Vector2(0, 1);
             att.anchoredPosition = new Vector2(24, -24);
-            att.sizeDelta = new Vector2(330, 176);
+            att.sizeDelta = new Vector2(330, 216);
             var attBg = att.gameObject.AddComponent<Image>();
             Cartao(attBg, 0.42f);
+
+            // faixa de nível no topo do painel: título + barra de XP
+            var faixaXp = Child("Nivel", att);
+            faixaXp.anchorMin = new Vector2(0, 1); faixaXp.anchorMax = new Vector2(1, 1);
+            faixaXp.pivot = new Vector2(0.5f, 1);
+            faixaXp.anchoredPosition = new Vector2(0, 2);
+            faixaXp.sizeDelta = new Vector2(0, 40);
+
+            _nivelText = Texto(faixaXp, "NivelTxt", new Vector2(0f, 1), 17, kOuro, TextAnchor.UpperLeft, -4);
+            ((RectTransform)_nivelText.transform).anchoredPosition = new Vector2(10, -4);
+
+            var xpBg = Child("Xp_bg", faixaXp);
+            xpBg.anchorMin = new Vector2(0, 1); xpBg.anchorMax = new Vector2(1, 1);
+            xpBg.pivot = new Vector2(0, 1);
+            xpBg.anchoredPosition = new Vector2(10, -26);
+            xpBg.sizeDelta = new Vector2(-20, 8);
+            var xpBgImg = xpBg.gameObject.AddComponent<Image>();
+            xpBgImg.color = new Color(0f, 0f, 0f, 0.6f); xpBgImg.raycastTarget = false;
+
+            var xpFill = Child("Xp_fill", xpBg);
+            xpFill.anchorMin = Vector2.zero; xpFill.anchorMax = Vector2.one;
+            xpFill.offsetMin = new Vector2(1f, 1f); xpFill.offsetMax = new Vector2(-1f, -1f);
+            _barXp = xpFill.gameObject.AddComponent<Image>();
+            _barXp.color = kOuro; _barXp.raycastTarget = false;
+            _barXp.type = Image.Type.Filled; _barXp.fillMethod = Image.FillMethod.Horizontal; _barXp.fillAmount = 0f;
 
             _barSaude   = Necessidade(att, "Vida",     new Color(0.90f, 0.25f, 0.30f), 0, out _valSaude);
             _barFome    = Necessidade(att, "Fome",     new Color(0.92f, 0.58f, 0.20f), 1, out _valFome);
@@ -406,7 +447,8 @@ namespace Caos.Simulation
         private Image Necessidade(RectTransform parent, string rotulo, Color cor, int linha, out Text valor)
         {
             const float alturaLinha = 32f, margem = 10f, colRotulo = 92f, colValor = 40f;
-            float y = -margem - linha * alturaLinha;
+            const float topoNivel = 40f;                 // a faixa de XP ocupa o topo do painel
+            float y = -topoNivel - margem - linha * alturaLinha;
 
             var lbl = Child(rotulo + "_lbl", parent);
             lbl.anchorMin = new Vector2(0, 1); lbl.anchorMax = new Vector2(0, 1);

@@ -36,12 +36,92 @@ namespace Caos.Simulation
             // transformador + gambiarra de fios (o visual mais brasileiro que existe)
             if (Random.value < 0.35f)
                 CityPalette.Cyl(go.transform, "Trafo", new Vector3(0f, 7.4f, 0.32f), 0.55f, 0.9f, CityPalette.MetalEscuro);
-            int fios = Random.Range(3, 7);
+            // Fiação: os fios atravessam o vão INTEIRO até o poste seguinte, e cada um pende um pouco
+            // diferente. Fio curto centrado no poste dava a impressão de que a rede acabava ali; o
+            // emaranhado contínuo é o que faz o céu da rua brasileira parecer o que é.
+            int fios = Random.Range(5, 10);
             for (int i = 0; i < fios; i++)
-                CityPalette.Box(go.transform, "Fio", new Vector3(0f, 7.9f + i * 0.16f, 0f),
-                                new Vector3(0.04f, 0.04f, CityLayout.Cell), CityPalette.Pichacao, collide: false);
+            {
+                float altura = 7.7f + i * 0.14f;
+                float barriga = Random.Range(0.10f, 0.45f);         // catenária: o fio cede no meio
+                var fio = CityPalette.Box(go.transform, "Fio", new Vector3(Random.Range(-0.12f, 0.12f), altura - barriga, 0f),
+                                new Vector3(0.035f, 0.035f, CityLayout.Cell * 1.02f), CityPalette.Pichacao, collide: false);
+                fio.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(-0.4f, 0.4f));
+            }
+
+            // gambiarra: o rolo de fio sobrando enrolado no poste, institucional no Brasil
+            if (Random.value < 0.45f)
+            {
+                var rolo = CityPalette.Cyl(go.transform, "RoloDeFio", new Vector3(0.12f, 6.9f, 0f), 0.55f, 0.30f, CityPalette.Pichacao);
+                rolo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            }
 
             return luminaria.GetComponent<MeshRenderer>();
+        }
+
+        // ------------------------------------------------------------ obra na pista
+        /// <summary>
+        /// Canteiro de obra: vala aberta, tapume listrado, cones, placa de "obra" e a caçamba de
+        /// entulho. É o obstáculo urbano mais brasileiro que existe — some com uma faixa da avenida
+        /// sem aviso nenhum e obriga o motorista a desviar.
+        /// </summary>
+        public static void ObraNaPista(Transform parent, Vector3 pos, float largura, float yaw)
+        {
+            var go = new GameObject("ObraNaPista");
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            var laranja = CityPalette.Mat(new Color(0.95f, 0.42f, 0.08f), 0.25f, 0f);
+            var branco  = CityPalette.Mat(new Color(0.92f, 0.92f, 0.90f), 0.25f, 0f);
+            var terra   = CityPalette.Mat(new Color(0.32f, 0.24f, 0.16f), 0.03f, 0f);
+
+            // vala: buraco retangular com terra revirada em volta
+            CityPalette.Box(go.transform, "Vala", new Vector3(0f, -0.10f, 0f), new Vector3(largura * 0.7f, 0.30f, 3.2f), terra, 0f, false);
+            for (int i = 0; i < 5; i++)
+                CityPalette.Box(go.transform, "Entulho",
+                    new Vector3(Random.Range(-largura * 0.4f, largura * 0.4f), 0.16f, Random.Range(-2f, 2f)),
+                    new Vector3(Random.Range(0.4f, 0.9f), 0.3f, Random.Range(0.4f, 0.9f)), terra, Random.Range(0f, 180f), false);
+
+            // tapume listrado laranja e branco cercando a vala
+            for (int lado = -1; lado <= 1; lado += 2)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    var cor = i % 2 == 0 ? laranja : branco;
+                    CityPalette.Box(go.transform, "Tapume",
+                        new Vector3(lado * largura * 0.42f, 0.55f, -2.4f + i * 0.95f),
+                        new Vector3(0.10f, 1.1f, 0.95f), cor, 0f, true);
+                }
+            }
+
+            // cones afunilando o desvio
+            for (int i = 0; i < 4; i++)
+                Cone(go.transform, new Vector3(-largura * 0.5f + i * 0.55f, 0f, 3.0f + i * 1.4f));
+
+            // placa "HOMENS TRABALHANDO"
+            var placa = new GameObject("PlacaObra");
+            placa.transform.SetParent(go.transform, false);
+            placa.transform.localPosition = new Vector3(0f, 0f, 4.8f);
+            CityPalette.Cyl(placa.transform, "Haste", new Vector3(0f, 0.8f, 0f), 0.08f, 1.6f, CityPalette.Metal, collide: true);
+            CityPalette.Box(placa.transform, "Painel", new Vector3(0f, 1.75f, 0f), new Vector3(1.5f, 1.1f, 0.08f), laranja, 0f, false);
+            CityPalette.Label(placa.transform, "OBRAS\nNA PISTA", new Vector3(0f, 1.75f, -0.06f), new Color(0.1f, 0.1f, 0.1f), 0.16f);
+
+            // caçamba de entulho encostada
+            CityPalette.Box(go.transform, "Cacamba", new Vector3(largura * 0.75f, 0.65f, -1.5f),
+                            new Vector3(2.1f, 1.3f, 4.2f), CityPalette.Mat(new Color(0.75f, 0.35f, 0.12f), 0.35f, 0.4f), 0f, true);
+        }
+
+        /// <summary>Cone de trânsito: base quadrada + corpo cônico com faixa refletiva.</summary>
+        public static void Cone(Transform parent, Vector3 pos)
+        {
+            var laranja  = CityPalette.Mat(new Color(0.95f, 0.38f, 0.06f), 0.30f, 0f);
+            var refletiva= CityPalette.Mat(new Color(0.94f, 0.94f, 0.92f), 0.55f, 0f);
+
+            CityPalette.Box(parent, "ConeBase", pos + new Vector3(0f, 0.03f, 0f), new Vector3(0.42f, 0.06f, 0.42f), laranja, 0f, false);
+            var corpo = CityPalette.Cyl(parent, "ConeCorpo", pos + new Vector3(0f, 0.32f, 0f), 0.26f, 0.6f, laranja, collide: true);
+            corpo.transform.localScale = new Vector3(0.26f, 0.30f, 0.26f);
+            CityPalette.Cyl(parent, "ConeFaixa", pos + new Vector3(0f, 0.40f, 0f), 0.21f, 0.10f, refletiva);
         }
 
         // ------------------------------------------------------------ semáforo

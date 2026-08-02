@@ -166,6 +166,23 @@ namespace Caos.Simulation
             CityPalette.Box(block.transform, "MeioFioL", new Vector3( size.x * 0.5f, 0.09f, 0f), new Vector3(0.3f, 0.18f, size.y), CityPalette.MeioFio, 0f, false);
             CityPalette.Box(block.transform, "MeioFioO", new Vector3(-size.x * 0.5f, 0.09f, 0f), new Vector3(0.3f, 0.18f, size.y), CityPalette.MeioFio, 0f, false);
 
+            // ---- padrão paulistano: piso tátil amarelo correndo rente ao meio-fio ----
+            // É a faixa de alerta obrigatória da calçada de São Paulo. Um detalhe pequeno que o olho
+            // reconhece na hora como "calçada de cidade grande" em vez de "chão cinza genérico".
+            var tatil = CityPalette.Mat(new Color(0.92f, 0.78f, 0.16f), 0.15f, 0f);
+            CityPalette.Box(block.transform, "PisoTatilN", new Vector3(0f, 0.145f,  size.y * 0.5f - 0.75f), new Vector3(size.x - 1.5f, 0.02f, 0.55f), tatil, 0f, false);
+            CityPalette.Box(block.transform, "PisoTatilS", new Vector3(0f, 0.145f, -size.y * 0.5f + 0.75f), new Vector3(size.x - 1.5f, 0.02f, 0.55f), tatil, 0f, false);
+
+            // guia rebaixada nas pontas: a rampa de acessibilidade da esquina
+            for (int sx = -1; sx <= 1; sx += 2)
+            for (int sz = -1; sz <= 1; sz += 2)
+            {
+                var rampa = CityPalette.Box(block.transform, "GuiaRebaixada",
+                    new Vector3(sx * (size.x * 0.5f - 1.6f), 0.08f, sz * (size.y * 0.5f + 0.05f)),
+                    new Vector3(2.4f, 0.16f, 0.9f), CityPalette.MeioFio, 0f, false);
+                rampa.transform.localRotation = Quaternion.Euler(sz * -9f, 0f, 0f);
+            }
+
             // miolo do lote (recuado da calçada)
             float rec = CityLayout.SidewalkWidth;
             Vector2 lote = new Vector2(size.x - rec * 2f, size.y - rec * 2f);
@@ -658,7 +675,25 @@ namespace Caos.Simulation
                 criados++;
             }
             Buracos = criados;
+
+            // ---- canteiros de obra: some com uma faixa da via sem avisar ninguém ----
+            int obras = 0;
+            for (int t = 0; t < 90 && obras < 7; t++)
+            {
+                Vector3 p = new Vector3(Random.Range(-_layout.Extent, _layout.Extent), 0f,
+                                        Random.Range(-_layout.Extent, _layout.Extent));
+                if (!_layout.TryNearestLanePoint(p, out var faixa, out var fwd)) continue;
+                if (!_layout.IsDrivable(faixa)) continue;
+
+                float yaw = Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg;
+                CityProps.ObraNaPista(root.transform, faixa, 4.5f, yaw);
+                obras++;
+            }
+            Obras = obras;
         }
+
+        /// <summary>Canteiros de obra espalhados pelas vias.</summary>
+        public int Obras { get; private set; }
 
         /// <summary>Quantos buracos a cidade ganhou nesta geração.</summary>
         public int Buracos { get; private set; }
