@@ -20,13 +20,22 @@ namespace Caos.Simulation
 
         private Transform                 _player;
         private CityLayout                _layout;
+        private Caos.World.WorldStateService _world;
+        private PlayerVehicleLink         _link;
+        private Transform                 _veiculoJogador;
         private ObjectPool<Pedestrian>    _pool;
         private readonly List<Pedestrian> _active = new List<Pedestrian>();
         private float _spawnAccum;
 
-        public void Init(Transform player)
+        public void Init(Transform player) => Init(player, null, null);
+
+        /// <summary>Com o link e o veículo, os pedestres também reagem ao carro do jogador.</summary>
+        public void Init(Transform player, PlayerVehicleLink link, Transform veiculo)
         {
             _player = player;
+            _link   = link;
+            _veiculoJogador = veiculo;
+            Caos.Core.ServiceLocator.TryGet(out _world);
             _layout = CityRuntime.Layout;
             _pool   = new ObjectPool<Pedestrian>(Factory, prewarm: maxActive);
             Fill();
@@ -82,6 +91,8 @@ namespace Caos.Simulation
                 var c = _active[i];
                 if (c == null) { _active.RemoveAt(i); continue; }
 
+                Reagir(c, ppos, dt);
+
                 c.pausaAte -= dt;
                 if (c.pausaAte <= 0f)
                 {
@@ -103,6 +114,64 @@ namespace Caos.Simulation
 
             _spawnAccum += dt;
             if (_spawnAccum >= spawnInterval) { _spawnAccum = 0f; Fill(); }
+        }
+
+        /// <summary>
+        /// Faz o pedestre <b>notar</b> o jogador. Cidade viva não é cidade com mais bonecos andando —
+        /// é cidade onde os bonecos reagem a você:
+        ///  • perto e a pé, ele vira a cabeça pra te olhar;
+        ///  • carro vindo em cima, ele salta pro lado (e xinga, presumivelmente);
+        ///  • com você procurado, ele sai correndo na direção oposta.
+        /// </summary>
+        private void Reagir(Pedestrian c, Vector3 jogador, float dt)
+        {
+            Vector3 d = jogador - c.transform.position; d.y = 0f;
+            float dist = d.magnitude;
+            if (dist > 22f) { c.assustado = Mathf.MoveTowards(c.assustado, 0f, dt); return; }
+
+            // procurado na rua: todo mundo corre
+            int estrelas = _world != null ? _world.Stars : 0;
+            bool perigo = estrelas >= 2 && dist < 16f;
+
+            // carro vindo rápido em cima: desvia pro lado
+            bool atropelamento = false;
+            if (_veiculoJogador != null && _link != null && !_link.OnFoot)
+            {
+                Vector3 dv = c.transform.position - _veiculoJogador.position; dv.y = 0f;
+                float distV = dv.magnitude;
+                var rb = _veiculoJogador.GetComponent<Rigidbody>();
+                float vel = rb != null ? rb.linearVelocity.magnitude : 0f;
+                if (distV < 9f && vel > 6f && Vector3.Dot(_veiculoJogador.forward, dv.normalized) > 0.55f)
+                {
+                    // pula para a lateral da trajetória do carro
+                    Vector3 lado = Vector3.Cross(Vector3.up, _veiculoJogador.forward).normalized;
+                    if (Vector3.Dot(dv, lado) < 0f) lado = -lado;
+                    c.dir   = lado;
+                    c.speed = 5.4f;
+                    c.pausaAte = 0f;
+                    atropelamento = true;
+                }
+            }
+
+            if (atropelamento || perigo)
+            {
+                c.assustado = 1f;
+                if (perigo && !atropelamento)
+                {
+                    c.dir   = (-d).normalized;      // foge do jogador
+                    c.speed = Random.Range(4.4f, 5.8f);
+                    c.pausaAte = 0f;
+                }
+                return;
+            }
+
+            // calmo e perto: só olha
+            c.assustado = Mathf.MoveTowards(c.assustado, 0f, dt * 0.5f);
+            if (dist < 7f && c.assustado <= 0.01f && dist > 0.2f)
+            {
+                Quaternion olhar = Quaternion.LookRotation(d / dist, Vector3.up);
+                c.transform.rotation = Quaternion.Slerp(c.transform.rotation, olhar, 2.2f * dt);
+            }
         }
 
         /// <summary>
@@ -183,5 +252,6 @@ namespace Caos.Simulation
         [HideInInspector] public Vector3 dir;
         [HideInInspector] public float   speed;
         [HideInInspector] public float   pausaAte;
+        [HideInInspector] public float   assustado;   // 0..1 — decai sozinho
     }
 }

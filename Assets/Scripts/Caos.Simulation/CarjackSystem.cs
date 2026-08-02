@@ -53,7 +53,7 @@ namespace Caos.Simulation
             if (alvo == null) return;
 
             string nome = alvo.dto != null ? alvo.dto.nome : "carro";
-            Prompt = $"{nome} — [E] roubar";
+            Prompt = alvo.ehMoto ? $"{nome} — [E] tomar a moto" : $"{nome} — [E] roubar";
 
             if (GameInput.Interact) StartCoroutine(Roubar(alvo));
         }
@@ -84,22 +84,26 @@ namespace Caos.Simulation
             Quaternion rotCarro = alvo.transform.rotation;
             VehicleDto dto = alvo.dto;
 
-            // ---- 1. o puxão: o jogador vai até a porta do motorista ----
+            // ---- 1. a abordagem ----
+            // Carro: contorna até a porta do motorista. Moto: chega pelo lado e puxa o piloto pelo
+            // braço — não tem porta pra abrir, e o gesto é bem mais curto.
             float lado = Vector3.Dot(_player.position - posCarro, alvo.transform.right) >= 0f ? 1f : -1f;
-            Vector3 porta = posCarro + alvo.transform.right * lado * 1.25f;
+            float recuo = alvo.ehMoto ? 0.85f : 1.25f;
+            Vector3 porta = posCarro + alvo.transform.right * lado * recuo;
             porta.y = _player.position.y;
+            float duracao = alvo.ehMoto ? kDuracaoPuxao * 0.65f : kDuracaoPuxao;
 
             var pc = _player.GetComponent<PlayerController>();
             var cc = _player.GetComponent<CharacterController>();
             if (pc != null) pc.enabled = false;
 
             Vector3 inicio = _player.position;
-            for (float t = 0f; t < kDuracaoPuxao; t += Time.deltaTime)
+            for (float t = 0f; t < duracao; t += Time.deltaTime)
             {
                 if (cc != null) cc.enabled = false;
-                _player.position = Vector3.Lerp(inicio, porta, Mathf.SmoothStep(0f, 1f, t / kDuracaoPuxao));
+                _player.position = Vector3.Lerp(inicio, porta, Mathf.SmoothStep(0f, 1f, t / duracao));
                 _player.rotation = Quaternion.Slerp(_player.rotation,
-                                    Quaternion.LookRotation(-alvo.transform.right * lado, Vector3.up), t / kDuracaoPuxao);
+                                    Quaternion.LookRotation(-alvo.transform.right * lado, Vector3.up), t / duracao);
                 yield return null;
             }
             if (cc != null) cc.enabled = true;
@@ -119,7 +123,8 @@ namespace Caos.Simulation
             }
 
             // ---- 4. crime: roubar na frente de todo mundo custa caro ----
-            CrimeSystem.Instance?.ReportCrime(14);
+            // moto na mão é mais escandaloso ainda: o piloto cai na rua na frente de todo mundo
+            CrimeSystem.Instance?.ReportCrime(alvo.ehMoto ? 18 : 14);
             if (_world != null) _world.ApplyCaos(10f);
 
             if (pc != null) pc.enabled = true;

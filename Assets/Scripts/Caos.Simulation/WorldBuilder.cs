@@ -215,7 +215,7 @@ namespace Caos.Simulation
             BuildTraffic(playerT, catalogs);
             BuildCrime();
             var police = BuildPolice(playerT, link, vehicleT, catalogs);
-            BuildPeds(playerT);
+            BuildPeds(playerT, link, vehicleT);
             BuildTouch();
             BuildLifecycle(playerT, vehicleT, police);
             BuildRoubo(playerT, link, vehicle, vehicleT);
@@ -477,10 +477,10 @@ namespace Caos.Simulation
         }
 
         // -------------------------------------------------------------- pedestres
-        private void BuildPeds(Transform player)
+        private void BuildPeds(Transform player, PlayerVehicleLink link, Transform veiculo)
         {
             var go = new GameObject("[Pedestres]");
-            go.AddComponent<PedestrianSystem>().Init(player);
+            go.AddComponent<PedestrianSystem>().Init(player, link, veiculo);
         }
 
         // -------------------------------------------------------------- touch

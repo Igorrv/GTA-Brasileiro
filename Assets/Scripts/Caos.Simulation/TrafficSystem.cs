@@ -68,8 +68,12 @@ namespace Caos.Simulation
             var rb = go.AddComponent<Rigidbody>();
             rb.isKinematic = true;
 
+            // gente ao volante: sem isso o trânsito é carcaça vazia e o roubo não faz sentido
+            VehicleFactory.Condutor(go.transform, dto);
+
             var car = go.AddComponent<TrafficCar>();
             car.dto = dto;
+            car.ehMoto = dto != null && (dto.classe == "Moto" || dto.carroceria == "Moto");
             car.cruzeiro = dto != null && dto.velMaxKmh > 20f ? Mathf.Min(dto.velMaxKmh / 3.6f, kVelAvenida) : kVelRua;
             go.SetActive(false);
             return car;
@@ -297,6 +301,7 @@ namespace Caos.Simulation
         [HideInInspector] public int   ultimaEsquina = -1;
         [HideInInspector] public float paciencia;    // quanto tempo preso atrás de alguém
         [HideInInspector] public bool  buzinou;
+        [HideInInspector] public bool  ehMoto;       // muda o gesto do roubo: puxar o piloto, não abrir porta
 
         public Vector3 Forward => eixo == 0 ? new Vector3(0f, 0f, dir) : new Vector3(dir, 0f, 0f);
     }

@@ -66,6 +66,56 @@ namespace Caos.Simulation
 
         public static Color CorDe(VehicleDto dto) => CityPalette.Parse(dto != null ? dto.corHex : null, new Color(0.75f, 0.15f, 0.15f));
 
+        /// <summary>
+        /// Coloca um condutor dentro do veículo — sentado ao volante no carro, montado na moto.
+        /// O trânsito era carcaça vazia, o que ficava evidente de perto e tirava qualquer sentido do
+        /// roubo de carro: não dava pra "puxar o motorista" de um carro sem motorista.
+        ///
+        /// É meio corpo: da cintura pra cima no carro (o resto fica escondido pela lataria mesmo) e
+        /// corpo inteiro na moto, onde tudo aparece.
+        /// </summary>
+        public static CharacterRig Condutor(Transform root, VehicleDto dto)
+        {
+            var style = ParseStyle(dto);
+            float L = dto != null && dto.comprimento > 0.5f ? dto.comprimento : 4.2f;
+            float H = dto != null && dto.altura      > 0.3f ? dto.altura      : 1.45f;
+            float W = dto != null && dto.largura     > 0.3f ? dto.largura     : 1.7f;
+
+            bool moto = style == BodyStyle.Moto || style == BodyStyle.Bike;
+
+            var suporte = new GameObject("Condutor");
+            suporte.transform.SetParent(root, false);
+            // no carro, o motorista fica do lado esquerdo (é a direção do Brasil)
+            suporte.transform.localPosition = moto
+                ? new Vector3(0f, H * 0.86f, -L * 0.06f)
+                : new Vector3(-W * 0.22f, H * 0.52f, L * 0.02f);
+
+            var rig = CharacterRig.Construir(suporte.transform,
+                camisa: CityPalette.CorViva(),
+                calca:  new Color(0.22f, 0.24f, 0.32f),
+                pele:   kPeles[Random.Range(0, kPeles.Length)],
+                bone:   CityPalette.CorViva());
+
+            // postura sentada: coxa à frente, joelho dobrado, mãos no volante/guidão
+            rig.PernaE.localRotation  = Quaternion.Euler(moto ? 52f : 78f, 0f, 0f);
+            rig.PernaD.localRotation  = Quaternion.Euler(moto ? 52f : 78f, 0f, 0f);
+            rig.CanelaE.localRotation = Quaternion.Euler(moto ? -68f : -84f, 0f, 0f);
+            rig.CanelaD.localRotation = Quaternion.Euler(moto ? -68f : -84f, 0f, 0f);
+            rig.BracoE.localRotation  = Quaternion.Euler(-62f, 0f,  16f);
+            rig.BracoD.localRotation  = Quaternion.Euler(-62f, 0f, -16f);
+            rig.AnteBracoE.localRotation = Quaternion.Euler(-28f, 0f, 0f);
+            rig.AnteBracoD.localRotation = Quaternion.Euler(-28f, 0f, 0f);
+            if (moto) rig.Tronco.localRotation = Quaternion.Euler(18f, 0f, 0f);   // debruçado no tanque
+
+            return rig;
+        }
+
+        private static readonly Color[] kPeles =
+        {
+            new Color(0.36f, 0.24f, 0.17f), new Color(0.52f, 0.36f, 0.25f),
+            new Color(0.68f, 0.50f, 0.36f), new Color(0.85f, 0.70f, 0.56f),
+        };
+
         /// <summary>Nome dado às peças de carroceria, para dar pra removê-las ao trocar de modelo.</summary>
         public const string kMarcaCarroceria = "Carroceria#";
 
