@@ -107,13 +107,18 @@ namespace Caos.Simulation
                 desejada += new Vector3(Random.Range(-amp, amp), Random.Range(-amp, amp), 0f);
             }
 
+            // Suavização SEPARADA: a posição segue mais devagar que a mira. Se as duas usam o mesmo
+            // lerp, a câmera "escorrega" nas curvas; separando, ela acompanha o alvo com firmeza e
+            // ainda assim amortece o solavanco do terreno.
             transform.position = Vector3.Lerp(transform.position, desejada, seguirLerp * dt);
 
             // ---- olhar um pouco à frente do movimento ----
             Vector3 vel = (target.position - _posAnterior) / dt;
             _posAnterior = target.position;
             Vector3 adiante = Vector3.ClampMagnitude(new Vector3(vel.x, 0f, vel.z) * 0.18f, 4f);
-            transform.LookAt(foco + adiante);
+
+            Quaternion miraAlvo = Quaternion.LookRotation((foco + adiante) - transform.position, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, miraAlvo, (seguirLerp * 1.6f) * dt);
 
             // ---- FOV pela velocidade ----
             if (_cam != null)

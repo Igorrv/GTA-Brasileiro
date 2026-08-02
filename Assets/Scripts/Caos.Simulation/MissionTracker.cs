@@ -30,6 +30,7 @@ namespace Caos.Simulation
 
         private string     _activeId;
         private MissionDto _active;
+        private int        _passo;              // objetivo em curso dentro da missão
         private bool       _isVehicleMission;
         private Vector3    _dest;
         private string     _destLabel = "";
@@ -118,34 +119,94 @@ namespace Caos.Simulation
             Debug.Log("[Missão] Ativa: " + _active.titulo + " — " + (_isVehicleMission ? "entre no veículo" : "vá até " + _destLabel));
         }
 
+        /// <summary>
+        /// Prepara a missão para ser jogada <b>passo a passo</b>. Antes, todos os objetivos do JSON
+        /// eram decorativos e a missão inteira resolvia como "chegue no bairro do último objetivo".
+        /// Agora cada objetivo é um passo com destino e condição próprios, e o beacon, a rota do GPS
+        /// e o painel acompanham o passo atual.
+        /// </summary>
         private void AnalyzeMission()
         {
-            _isVehicleMission = false;
-            if (_active == null || _active.objetivos == null || _active.objetivos.Count == 0)
-            {
-                _dest = Vector3.zero; _destLabel = "Centro"; return;
-            }
-
-            foreach (var o in _active.objetivos)
-            {
-                string alvo = o.alvo == null ? "" : o.alvo.ToLower();
-                if (o.tipo == "ir" && (alvo.Contains("van") || alvo.Contains("veic") || alvo.Contains("uno")))
-                {
-                    _isVehicleMission = true;
-                    break;
-                }
-            }
-
-            string local = LastLocal();
-            _dest      = AnchorFor(local);
-            _destLabel = LocalLabel(local);
+            _passo = 0;
+            PrepararPasso();
         }
 
-        private string LastLocal()
+        /// <summary>Objetivo do passo atual (nulo se a missão não tem objetivos).</summary>
+        private MissionObjectiveDto ObjetivoAtual =>
+            _active != null && _active.objetivos != null && _passo < _active.objetivos.Count
+                ? _active.objetivos[_passo] : null;
+
+        public int  PassoAtual  => _passo + 1;
+        public int  TotalPassos => _active != null && _active.objetivos != null ? Mathf.Max(1, _active.objetivos.Count) : 1;
+
+        private void PrepararPasso()
         {
-            if (_active == null || _active.objetivos == null || _active.objetivos.Count == 0) return "Centro";
-            var last = _active.objetivos[_active.objetivos.Count - 1];
-            return string.IsNullOrEmpty(last.local) ? "Centro" : last.local;
+            var o = ObjetivoAtual;
+            if (o == null)
+            {
+                // missão sem objetivos: cai no centro, e conclui ao chegar
+                _isVehicleMission = false;
+                _dest = AnchorFor("Centro");
+                _destLabel = LocalLabel("Centro");
+                return;
+            }
+
+            // "ir" até um veículo (van do Tonho, o próprio carro) resolve embarcando
+            string alvo = o.alvo == null ? "" : o.alvo.ToLower();
+            _isVehicleMission = o.tipo == "ir" &&
+                                (alvo.Contains("van") || alvo.Contains("veic") || alvo.Contains("uno") || alvo.Contains("carro"));
+
+            string local = string.IsNullOrEmpty(o.local) ? "Centro" : o.local;
+
+            // se o alvo é um estabelecimento do catálogo, o destino é a LOJA, não o centro do bairro
+            _dest      = AncoraDoAlvo(alvo, local);
+            _destLabel = RotuloDoAlvo(alvo, local);
+        }
+
+        /// <summary>
+        /// Destino do passo: primeiro tenta casar o alvo com um estabelecimento real da cidade
+        /// (a barraca da Tia Marlene é um ponto concreto, não "o bairro da rodoviária"); se não casar,
+        /// usa o centro do bairro.
+        /// </summary>
+        private Vector3 AncoraDoAlvo(string alvo, string local)
+        {
+            var loja = LojaPorId(alvo);
+            if (loja != null) return loja.transform.position;
+            return AnchorFor(local);
+        }
+
+        private string RotuloDoAlvo(string alvo, string local)
+        {
+            var loja = LojaPorId(alvo);
+            if (loja != null) return loja.rotulo;
+            return LocalLabel(local);
+        }
+
+        private Interactable LojaPorId(string alvo)
+        {
+            var gen = CityRuntime.Generator;
+            if (gen == null || string.IsNullOrEmpty(alvo)) return null;
+            for (int i = 0; i < gen.Shops.Count; i++)
+            {
+                var s = gen.Shops[i];
+                if (s == null) continue;
+                if (s.name.EndsWith(alvo, System.StringComparison.OrdinalIgnoreCase)) return s;
+            }
+            return null;
+        }
+
+        /// <summary>Verbo do passo, para o painel dizer o que fazer e não só onde ir.</summary>
+        private string VerboDoPasso()
+        {
+            var o = ObjetivoAtual;
+            if (o == null) return "Vá até";
+            switch (o.tipo)
+            {
+                case "coletar": return "Pegue em";
+                case "levar":   return "Entregue em";
+                case "falar":   return "Fale com quem está em";
+                default:        return "Vá até";
+            }
         }
 
         private void Update()
@@ -156,11 +217,11 @@ namespace Caos.Simulation
                 return;
             }
 
-            bool done;
+            bool passoCumprido;
             if (_isVehicleMission)
-                done = _link != null && !_link.OnFoot;                                   // entrou no veículo
+                passoCumprido = _link != null && !_link.OnFoot;                          // entrou no veículo
             else
-                done = _player != null && SqrHoriz(_player.position - _dest) <= kReachRadius * kReachRadius;
+                passoCumprido = _player != null && SqrHoriz(_player.position - _dest) <= kReachRadius * kReachRadius;
 
             if (_beacon != null)
             {
@@ -176,14 +237,29 @@ namespace Caos.Simulation
                 if (_objText != null) _objText.text = Orientacao();
             }
 
-            if (done) _missions.Complete(_activeId);   // OnConcluida cuida do chime + próxima
+            if (!passoCumprido) return;
+
+            // passo cumprido: avança. Só o ÚLTIMO conclui a missão — os do meio dão o chime curto
+            // e mandam o jogador para o próximo destino (o GPS recalcula sozinho).
+            int total = _active.objetivos != null ? _active.objetivos.Count : 0;
+            if (_passo + 1 < total)
+            {
+                _passo++;
+                PrepararPasso();
+                RefreshPanel();
+                _audio?.Chime();
+                Debug.Log($"[Missão] Passo {_passo}/{total} de '{_active.titulo}' — agora: {VerboDoPasso()} {_destLabel}.");
+                return;
+            }
+
+            _missions.Complete(_activeId);   // OnConcluida cuida do chime + próxima missão
         }
 
         // -------------------------------------------------------- UI
         private void RefreshPanel()
         {
             if (_active == null) { ShowEmpty(); return; }
-            if (_titleText  != null) _titleText.text  = _active.titulo;
+            if (_titleText  != null) _titleText.text  = $"{_active.titulo}   ({PassoAtual}/{TotalPassos})";
             if (_objText    != null) _objText.text    = Orientacao();
             if (_rewardText != null) _rewardText.text = "R$ " + (_active.recompensaRs).ToString("F0") + "   ·   " + (_active.recompensaXp).ToString("F0") + " XP";
             if (_beaconLabel != null) _beaconLabel.text = _isVehicleMission ? "VEICULO" : _destLabel.ToUpper();
@@ -200,11 +276,11 @@ namespace Caos.Simulation
 
             float dist = _player != null ? Vector3.Distance(_player.position, _dest) : 0f;
             bool aPe = _link == null || _link.OnFoot;
+            string verbo = VerboDoPasso();
 
-            if (dist <= kReachRadius * 1.5f) return "Chegou! " + _destLabel;
-            if (aPe && dist > 120f)          return $"Pegue o carro [E] e siga a linha azul  ·  {dist:F0} m";
-            if (aPe)                         return $"Siga a linha azul até {_destLabel}  ·  {dist:F0} m";
-            return $"Siga a linha azul até {_destLabel}  ·  {dist:F0} m";
+            if (dist <= kReachRadius * 1.5f) return $"Chegou!  {verbo} {_destLabel}";
+            if (aPe && dist > 120f)          return $"Pegue o carro [E]  ·  {verbo} {_destLabel}  ·  {dist:F0} m";
+            return $"{verbo} {_destLabel}  ·  siga a linha azul  ·  {dist:F0} m";
         }
 
         private void ShowEmpty()

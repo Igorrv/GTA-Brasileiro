@@ -76,6 +76,30 @@ namespace Caos.Simulation
             return m;
         }
 
+        private static readonly Dictionary<int, Material> _cacheEmissivo = new Dictionary<int, Material>();
+
+        /// <summary>
+        /// Material que <b>emite luz na própria cor</b> — letreiro de comércio aceso. Cacheado por
+        /// cor e intensidade (quantizadas), então acender cem letreiros não cria cem materiais.
+        /// </summary>
+        public static Material MatEmissivo(Color c, float intensidade)
+        {
+            int passo = Mathf.Clamp(Mathf.RoundToInt(intensidade * 4f), 0, 8);
+            int key = (Mathf.RoundToInt(c.r * 15) << 12) | (Mathf.RoundToInt(c.g * 15) << 8)
+                    | (Mathf.RoundToInt(c.b * 15) << 4) | passo;
+
+            if (_cacheEmissivo.TryGetValue(key, out var m) && m != null) return m;
+
+            m = new Material(Sh) { color = c, name = "CaosLuz_" + key };
+            m.SetFloat("_Glossiness", 0.30f);
+            m.SetFloat("_Smoothness", 0.30f);
+            m.EnableKeyword("_EMISSION");
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            m.SetColor("_EmissionColor", c * (passo * 0.25f));
+            _cacheEmissivo[key] = m;
+            return m;
+        }
+
         /// <summary>
         /// Acende (ou apaga) as janelas da cidade inteira. Como o material do vidro é <b>compartilhado</b>
         /// por todos os prédios, mudar a emissão dele uma vez ilumina a cidade toda — custo zero por
@@ -246,6 +270,7 @@ namespace Caos.Simulation
         {
             _cache.Clear();
             _cacheTex.Clear();
+            _cacheEmissivo.Clear();
             CityTextures.Clear();
         }
     }

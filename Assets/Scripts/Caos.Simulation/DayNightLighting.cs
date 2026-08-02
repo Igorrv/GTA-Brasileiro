@@ -95,6 +95,9 @@ namespace Caos.Simulation
             // janela acesa: uma troca de material acende a cidade inteira
             CityPalette.AcenderJanelas(Mathf.Lerp(1.15f, 0f, d));
 
+            // letreiro do comércio: acende junto e na cor da própria casa
+            AcenderLetreiros(Mathf.Lerp(1.5f, 0f, d));
+
             // postes: acendem no fim da tarde, apagam de manhã (só troca no instante da virada)
             bool noite = h < 6f || h >= 18f;
             if (noite != _postesAcesos || _primeiraVez)
@@ -104,6 +107,26 @@ namespace Caos.Simulation
                     _postesAcesos = noite;
                     _primeiraVez  = false;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Acende os letreiros. Cada um usa a cor da própria casa, então a rua comercial à noite fica
+        /// com aquele mosaico de cor — e não com um brilho branco uniforme.
+        /// </summary>
+        private void AcenderLetreiros(float intensidade)
+        {
+            var gen = CityRuntime.Generator;
+            if (gen == null) return;
+
+            for (int i = 0; i < gen.Letreiros.Count; i++)
+            {
+                var l = gen.Letreiros[i];
+                if (l.renderer == null) continue;
+                // material por cor+intensidade: o cache de CityPalette mantém a contagem sob controle
+                l.renderer.sharedMaterial = intensidade <= 0.05f
+                    ? CityPalette.Mat(l.cor, 0.30f, 0f)
+                    : CityPalette.MatEmissivo(l.cor, intensidade);
             }
         }
 

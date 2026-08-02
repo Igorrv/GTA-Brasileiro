@@ -717,7 +717,7 @@ namespace Caos.Simulation
                 default:                     MontarLoja(go.transform, cor);             break;
             }
 
-            CityPalette.Label(_labels, dto.nome.ToUpper(), pos + new Vector3(0f, 6.2f, -2.6f), cor, 0.30f);
+            Letreiro(pos + new Vector3(0f, 5.4f, -3.0f), dto.nome, cor);
 
             var it = go.AddComponent<Interactable>();
             it.tipo      = tipo;
@@ -736,6 +736,40 @@ namespace Caos.Simulation
             }
             return it;
         }
+
+        /// <summary>
+        /// Letreiro do comércio: painel com moldura, fundo na cor da casa e o nome por cima — no lugar
+        /// do texto solto flutuando. Os painéis entram na lista <see cref="Letreiros"/> e o ciclo
+        /// dia/noite <b>acende</b> todos de uma vez ao anoitecer, que é quando a rua comercial vira
+        /// aquele festival de luz.
+        /// </summary>
+        private void Letreiro(Vector3 pos, string nome, Color cor)
+        {
+            var go = new GameObject("Letreiro");
+            go.transform.SetParent(_labels, false);   // fora do batching: o material muda à noite
+            go.transform.position = pos;
+
+            float largura = Mathf.Clamp(nome.Length * 0.30f + 1.2f, 4f, 11f);
+
+            CityPalette.Box(go.transform, "Moldura", Vector3.zero, new Vector3(largura + 0.35f, 1.55f, 0.30f),
+                            CityPalette.Mat(new Color(0.14f, 0.14f, 0.16f), 0.35f, 0.5f), 0f, false);
+            var painel = CityPalette.Box(go.transform, "Painel", new Vector3(0f, 0f, -0.18f),
+                            new Vector3(largura, 1.2f, 0.06f), CityPalette.Mat(cor, 0.30f, 0f), 0f, false);
+
+            // dois braços prendendo na fachada — letreiro não flutua
+            CityPalette.Cyl(go.transform, "SuporteE", new Vector3(-largura * 0.35f, 0.95f, 0.15f), 0.07f, 0.9f, CityPalette.Metal);
+            CityPalette.Cyl(go.transform, "SuporteD", new Vector3( largura * 0.35f, 0.95f, 0.15f), 0.07f, 0.9f, CityPalette.Metal);
+
+            var tm = CityPalette.Label(go.transform, nome.ToUpper(), new Vector3(0f, 0f, -0.24f), Color.white, 0.30f);
+            tm.anchor = TextAnchor.MiddleCenter;
+
+            var mr = painel.GetComponent<MeshRenderer>();
+            if (mr != null) Letreiros.Add(new LetreiroAceso { renderer = mr, cor = cor });
+        }
+
+        /// <summary>Painel de letreiro + a cor da casa, para o dia/noite acender na tonalidade certa.</summary>
+        public struct LetreiroAceso { public MeshRenderer renderer; public Color cor; }
+        public List<LetreiroAceso> Letreiros { get; } = new List<LetreiroAceso>();
 
         private void MontarPosto(Transform p, Color cor)
         {

@@ -247,12 +247,17 @@ namespace Caos.Simulation
             ap.anchoredPosition = new Vector2(-40f, 0f);
             ap.sizeDelta = new Vector2(kLargura, kAltura);
             var corpo = _aparelho.AddComponent<Image>();
-            corpo.color = new Color(0.02f, 0.02f, 0.03f, 1f);   // carcaça
+            corpo.sprite = UiTextures.Arredondado(0.10f);       // carcaça com cantos, como aparelho de verdade
+            corpo.type = Image.Type.Sliced;
+            corpo.color = new Color(0.02f, 0.02f, 0.03f, 1f);
 
             _tela = Filho(ap, "Tela");
             _tela.anchorMin = Vector2.zero; _tela.anchorMax = Vector2.one;
             _tela.offsetMin = new Vector2(14f, 22f); _tela.offsetMax = new Vector2(-14f, -14f);
-            _tela.gameObject.AddComponent<Image>().color = kFundo;
+            var telaImg = _tela.gameObject.AddComponent<Image>();
+            telaImg.sprite = UiTextures.Arredondado(0.07f);
+            telaImg.type = Image.Type.Sliced;
+            telaImg.color = kFundo;
 
             // ---- barra de status ----
             var status = Filho(_tela, "Status");
@@ -325,11 +330,14 @@ namespace Caos.Simulation
             rt.sizeDelta = new Vector2(tam, tam);
 
             var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = UiTextures.Arredondado(0.22f);      // ícone com canto arredondado, padrão iOS
+            img.type = Image.Type.Sliced;
             img.color = cor;
             var btn = rt.gameObject.AddComponent<Button>();
             btn.targetGraphic = img;
             var cores = btn.colors;
             cores.highlightedColor = Color.Lerp(cor, Color.white, 0.35f);
+            cores.pressedColor     = Color.Lerp(cor, Color.black, 0.25f);
             btn.colors = cores;
             btn.onClick.AddListener(acao);
 

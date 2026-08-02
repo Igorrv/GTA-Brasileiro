@@ -234,13 +234,62 @@ namespace Caos.Simulation
         }
 
         // ================================================================== detalhes
+        /// <summary>
+        /// Frente e traseira completas: para-choque, grade, farol com lente e refletor, lanterna
+        /// vermelha e escapamento. São peças pequenas, mas é a ausência delas que faz um carro
+        /// parecer um sabonete — o olho procura justamente esses contornos.
+        /// </summary>
         private static void Luzes(Transform root, float L, float W, float y)
         {
             Grade(root, L, W, y);
-            CityPalette.Box(root, "FarolE", new Vector3(-W * 0.32f, y, L * 0.5f), new Vector3(W * 0.22f, 0.16f, 0.08f), CityPalette.LuzAcesa, 0f, false);
-            CityPalette.Box(root, "FarolD", new Vector3( W * 0.32f, y, L * 0.5f), new Vector3(W * 0.22f, 0.16f, 0.08f), CityPalette.LuzAcesa, 0f, false);
-            CityPalette.Box(root, "LanternaE", new Vector3(-W * 0.32f, y, -L * 0.5f), new Vector3(W * 0.20f, 0.14f, 0.08f), CityPalette.Mat(new Color(0.75f, 0.10f, 0.10f)), 0f, false);
-            CityPalette.Box(root, "LanternaD", new Vector3( W * 0.32f, y, -L * 0.5f), new Vector3(W * 0.20f, 0.14f, 0.08f), CityPalette.Mat(new Color(0.75f, 0.10f, 0.10f)), 0f, false);
+
+            var cromo   = CityPalette.Mat(new Color(0.72f, 0.73f, 0.76f), 0.80f, 0.95f);
+            var escuro  = CityPalette.Mat(new Color(0.12f, 0.12f, 0.13f), 0.30f, 0.2f);
+            var lente   = CityPalette.Mat(new Color(0.92f, 0.90f, 0.80f), 0.90f, 0.1f);
+            var vermelho= CityPalette.Mat(new Color(0.72f, 0.09f, 0.09f), 0.85f, 0.1f);
+            var ambar   = CityPalette.Mat(new Color(0.95f, 0.55f, 0.10f), 0.85f, 0.1f);
+
+            // para-choques
+            CityPalette.Box(root, "ParaChoqueF", new Vector3(0f, y - 0.16f, L * 0.5f + 0.05f),
+                            new Vector3(W * 1.01f, 0.26f, 0.16f), escuro, 0f, false);
+            CityPalette.Box(root, "ParaChoqueT", new Vector3(0f, y - 0.16f, -L * 0.5f - 0.05f),
+                            new Vector3(W * 1.01f, 0.26f, 0.16f), escuro, 0f, false);
+
+            // faróis: refletor + lente por cima (dá profundidade em vez de adesivo)
+            for (int s = -1; s <= 1; s += 2)
+            {
+                CityPalette.Box(root, "FarolCaixa", new Vector3(s * W * 0.32f, y, L * 0.5f - 0.02f),
+                                new Vector3(W * 0.24f, 0.18f, 0.10f), cromo, 0f, false);
+                CityPalette.Box(root, "FarolLente", new Vector3(s * W * 0.32f, y, L * 0.5f + 0.04f),
+                                new Vector3(W * 0.21f, 0.15f, 0.05f), lente, 0f, false);
+                CityPalette.Box(root, "Pisca", new Vector3(s * W * 0.46f, y, L * 0.5f + 0.02f),
+                                new Vector3(W * 0.09f, 0.12f, 0.06f), ambar, 0f, false);
+
+                CityPalette.Box(root, "Lanterna", new Vector3(s * W * 0.32f, y, -L * 0.5f - 0.03f),
+                                new Vector3(W * 0.22f, 0.20f, 0.07f), vermelho, 0f, false);
+            }
+
+            // retrovisores
+            for (int s = -1; s <= 1; s += 2)
+            {
+                CityPalette.Box(root, "Retrovisor", new Vector3(s * (W * 0.55f), y + 0.42f, L * 0.20f),
+                                new Vector3(0.16f, 0.11f, 0.09f), escuro, 0f, false);
+                CityPalette.Box(root, "Braco", new Vector3(s * (W * 0.50f), y + 0.42f, L * 0.20f),
+                                new Vector3(0.10f, 0.04f, 0.04f), escuro, 0f, false);
+            }
+
+            // escapamento saindo por baixo, atrás
+            CityPalette.Cyl(root, "Escapamento", new Vector3(W * 0.28f, y - 0.26f, -L * 0.5f - 0.06f), 0.09f, 0.22f, cromo)
+                       .transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+            // frisos laterais / maçanetas
+            for (int s = -1; s <= 1; s += 2)
+            {
+                CityPalette.Box(root, "Friso", new Vector3(s * W * 0.505f, y - 0.10f, 0f),
+                                new Vector3(0.03f, 0.07f, L * 0.66f), escuro, 0f, false);
+                CityPalette.Box(root, "Macaneta", new Vector3(s * W * 0.51f, y + 0.30f, L * 0.04f),
+                                new Vector3(0.03f, 0.05f, 0.20f), cromo, 0f, false);
+            }
         }
 
         /// <summary>Vidro do carro: fumê com reflexo — material compartilhado por toda a frota.</summary>
