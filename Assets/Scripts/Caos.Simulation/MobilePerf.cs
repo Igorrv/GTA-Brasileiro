@@ -56,6 +56,12 @@ namespace Caos.Simulation
             // ---- céu procedural + reflexo ambiente ----
             MontarCeu();
 
+            // qual pipeline está de fato ativo — a cidade monta materiais em runtime e precisa casar
+            var rp = UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline;
+            string pipeline = rp != null ? rp.GetType().Name : "Built-in";
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            Debug.Log($"[Perf] Pipeline: {pipeline} · shader dos materiais: {(shader != null ? shader.name : "Standard")}");
+
             Debug.Log($"[Perf] Perfil {(Mobile ? "CELULAR" : "PC")}: 60 fps, sombra {QualitySettings.shadowDistance:F0} m " +
                       $"em {QualitySettings.shadowCascades} cascatas, {QualitySettings.pixelLightCount} luz(es) por pixel, " +
                       $"MSAA {QualitySettings.antiAliasing}×, fixedDt={Time.fixedDeltaTime:F3}.");
