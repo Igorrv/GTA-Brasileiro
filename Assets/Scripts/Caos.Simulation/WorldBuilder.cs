@@ -15,7 +15,36 @@ namespace Caos.Simulation
     {
         public static CityLayout    Layout;
         public static CityGenerator Generator;
+        /// <summary>Semente que gerou esta cidade — o mesmo valor reproduz o mesmo mundo.</summary>
+        public static int  Semente;
         public static bool Pronta => Layout != null && Generator != null;
+
+        /// <summary>
+        /// Gera a cidade com a semente dada, de forma <b>determinística</b>.
+        ///
+        /// A cidade toda nasce de ~126 chamadas de <c>Random</c>. Como o <c>UnityEngine.Random</c> é um
+        /// gerador global com estado, semear uma vez antes de construir faz toda a sequência ser
+        /// idêntica em qualquer máquina — desde que o caminho de código seja o mesmo. É por isso que a
+        /// construção precisa ser <b>atômica</b>: qualquer outro sistema sorteando no meio (tráfego,
+        /// pedestre) deslocaria a sequência e o mundo divergiria.
+        ///
+        /// O estado anterior é salvo e restaurado, senão o jogo inteiro ficaria previsível depois do
+        /// boot — o evento aleatório da tarde sairia sempre igual.
+        /// </summary>
+        public static void GerarDeterministico(CityGenerator gen, int semente)
+        {
+            var estadoAnterior = UnityEngine.Random.state;
+            UnityEngine.Random.InitState(semente);
+            try
+            {
+                gen.Build();
+                Semente = semente;
+            }
+            finally
+            {
+                UnityEngine.Random.state = estadoAnterior;
+            }
+        }
     }
 
     /// <summary>
@@ -152,10 +181,13 @@ namespace Caos.Simulation
             var layout = new CityLayout(kGridLines, catalogs);
             var cityGo = new GameObject("[Cidade]");
             var gen    = new CityGenerator(layout, catalogs, cityGo.transform);
-            gen.Build();
+
+            // a cidade nasce da semente da sessão: mesma semente = mesmo mundo em todo cliente
+            CityRuntime.GerarDeterministico(gen, GameSession.Semente);
+
             CityRuntime.Layout    = layout;
             CityRuntime.Generator = gen;
-            Diag($"Cidade gerada: {layout.N}x{layout.N} vias, {gen.Shops.Count} estabelecimentos, " +
+            Diag($"Cidade gerada (semente {CityRuntime.Semente}): {layout.N}x{layout.N} vias, {gen.Shops.Count} estabelecimentos, " +
                  $"{gen.ParkingSpots.Count} vagas, {gen.Luminarias.Count} postes, {gen.Buracos} buracos, " +
                  $"{PlayerActions.Assentos.Count} assentos, " +
                  $"{cityGo.GetComponentsInChildren<MeshRenderer>(true).Length} peças (já combinadas por quarteirão).");

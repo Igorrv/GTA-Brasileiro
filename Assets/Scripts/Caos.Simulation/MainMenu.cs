@@ -37,13 +37,33 @@ namespace Caos.Simulation
             go.AddComponent<MainMenu>();
         }
 
+        private WorldHub _hub;
+
         private void Awake()
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
             Montar();
 
-            // sem ninguém para clicar (smoke headless / CI), começa sozinho num jogo novo do slot 1
-            if (Application.isBatchMode) Jogar(1, novo: true);
+            // fluxo: hub de mundos → escolha do mundo → slots daquele mundo
+            _hub = gameObject.AddComponent<WorldHub>();
+            _hub.Init(_font);
+            if (_raiz != null) _raiz.SetActive(false);   // slots só depois de escolher o mundo
+
+            // sem ninguém para clicar (smoke headless / CI), pega o primeiro mundo e começa
+            if (Application.isBatchMode)
+            {
+                _hub.Fechar();
+                Jogar(1, novo: true);
+            }
+        }
+
+        /// <summary>Chamado pelo <see cref="WorldHub"/> quando o jogador entra num mundo.</summary>
+        private void HubEscolheuMundo(Caos.Data.WorldDto mundo)
+        {
+            if (_raiz != null) _raiz.SetActive(true);
+            AtualizarCartoes();
+            if (_rodape != null)
+                _rodape.text = $"Mundo: {mundo.nome}  ·  escolha em qual vida continuar";
         }
 
         private void Update()

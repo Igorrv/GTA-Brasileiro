@@ -1,0 +1,45 @@
+{
+  "_comentario": "Cada mundo é uma semente. Mesma semente = mesma cidade em todo cliente, o que é o contrato do multiplayer. 'endereco' vazio = mundo local; quando o netcode entrar, é aqui que entra o host:porta do servidor.",
+  "items": [
+    {
+      "id": "genesio",
+      "nome": "São Genésio do Caos",
+      "semente": 20260801,
+      "lema": "O mundo original. Trânsito pesado, PM ativa, comércio cheio.",
+      "regiao": "Sudeste",
+      "lotacaoMax": 16,
+      "dificuldade": 2,
+      "endereco": ""
+    },
+    {
+      "id": "genesio_novo",
+      "nome": "Genésio Novo",
+      "semente": 77413355,
+      "lema": "Cidade recém-loteada: quarteirões diferentes, mesmas regras. Bom pra recomeçar.",
+      "regiao": "Sudeste",
+      "lotacaoMax": 16,
+      "dificuldade": 2,
+      "endereco": ""
+    },
+    {
+      "id": "beira_mar",
+      "nome": "Beira-Mar",
+      "semente": 31415926,
+      "lema": "Traçado que puxa pra orla. Turista, quiosque e polícia de praia.",
+      "regiao": "Litoral",
+      "lotacaoMax": 12,
+      "dificuldade": 1,
+      "endereco": ""
+    },
+    {
+      "id": "morro_alto",
+      "nome": "Morro Alto",
+      "semente": 66666601,
+      "lema": "Periferia grande, asfalto ruim, buraco em todo canto. Pra quem quer apanhar.",
+      "regiao": "Interior",
+      "lotacaoMax": 12,
+      "dificuldade": 4,
+      "endereco": ""
+    }
+  ]
+}

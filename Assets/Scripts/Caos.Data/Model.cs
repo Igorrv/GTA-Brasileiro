@@ -154,6 +154,27 @@ namespace Caos.Data
         public List<string> locucoes; // falas do locutor entre faixas
     }
 
+    /// <summary>
+    /// Um mundo do hub de servidores. A <b>semente</b> é a identidade: ela determina a cidade inteira,
+    /// então entrar no mesmo mundo é partir da mesma semente. <c>endereco</c> vazio significa mundo
+    /// local (roda na sua máquina); quando o netcode entrar, ele guarda o host:porta do servidor e a
+    /// mesma tela passa a listar mundos remotos sem mudar de formato.
+    /// </summary>
+    [Serializable]
+    public class WorldDto
+    {
+        public string id;
+        public string nome;
+        public int    semente;
+        public string lema;
+        public string regiao;
+        public int    lotacaoMax;
+        public int    dificuldade;   // 1..5 — afeta buraco, policiamento e preço
+        public string endereco;      // "" = local · "host:porta" = servidor remoto
+
+        public bool EhLocal => string.IsNullOrEmpty(endereco);
+    }
+
     /// <summary>Nomes de logradouro sorteados pelo gerador de cidade (placas + HUD).</summary>
     [Serializable]
     public class StreetNamesDto

@@ -22,7 +22,22 @@ namespace Caos.Save
         /// <summary>Slot em uso. O menu inicial define antes do jogo carregar.</summary>
         public static int SlotAtual { get; set; } = 1;
 
-        private static string Arquivo(int slot) => slot <= 1 ? "save.json" : $"save_{slot}.json";
+        /// <summary>
+        /// Mundo em uso. <b>Sua vida é daquele mundo</b>: dinheiro, missões, reputação e progresso
+        /// ficam num arquivo por mundo, então dar certo em São Genésio não te dá nada em Beira-Mar —
+        /// que é o que faz entrar num servidor significar alguma coisa.
+        ///
+        /// Vazio (ou "genesio") mantém o caminho antigo <c>save.json</c>, para não perder o progresso
+        /// de quem já jogava antes do hub existir.
+        /// </summary>
+        public static string MundoAtual { get; set; } = "";
+
+        private static string Arquivo(int slot)
+        {
+            bool mundoPadrao = string.IsNullOrEmpty(MundoAtual) || MundoAtual == "genesio";
+            if (mundoPadrao) return slot <= 1 ? "save.json" : $"save_{slot}.json";
+            return $"save_{MundoAtual}_{slot}.json";
+        }
         private static string Caminho(int slot) => System.IO.Path.Combine(Application.persistentDataPath, Arquivo(slot));
 
         public static bool Existe(int slot) => File.Exists(Caminho(slot));

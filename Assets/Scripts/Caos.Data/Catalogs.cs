@@ -20,6 +20,7 @@ namespace Caos.Data
         public readonly List<MissionDto>  Missions  = new List<MissionDto>();
         public readonly List<ShopDto>     Shops     = new List<ShopDto>();
         public readonly List<RadioStationDto> Radio = new List<RadioStationDto>();
+        public readonly List<WorldDto>    Worlds    = new List<WorldDto>();
         public StreetNamesDto             Streets   = null;
 
         public readonly Dictionary<string, VehicleDto>  VehicleById  = new Dictionary<string, VehicleDto>();
@@ -78,6 +79,7 @@ namespace Caos.Data
     [Serializable] class MissionList  { public List<MissionDto>  items; }
     [Serializable] class ShopList     { public List<ShopDto>     items; }
     [Serializable] class RadioList    { public List<RadioStationDto> items; }
+    [Serializable] class WorldList    { public List<WorldDto>    items; }
 
     /// <summary>
     /// Carrega todos os catálogos. No editor/PC usa File (síncrono); em builds usa UnityWebRequest (async).
@@ -105,6 +107,7 @@ namespace Caos.Data
             yield return Read<ShopList>("shops.json",        list => c.Shops.AddRange(list.items ?? Empty<ShopDto>()));
             yield return Read<RadioList>("radio.json",       list => c.Radio.AddRange(list.items ?? Empty<RadioStationDto>()));
             yield return Read<StreetNamesDto>("streets.json",dto  => c.Streets = dto);
+            yield return Read<WorldList>("worlds.json",     list => c.Worlds.AddRange(list.items ?? Empty<WorldDto>()));
 
             c.IndexAll();
             UnityEngine.Debug.Log($"[Catalogs] Cfg carregada: {c.Vehicles.Count} veículos, {c.Factions.Count} facções, {c.Districts.Count} bairros, {c.Items.Count} itens, {c.Events.Count} eventos, {c.Missions.Count} missões, {c.Shops.Count} estabelecimentos, {c.Radio.Count} estações de rádio.");
