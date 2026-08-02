@@ -105,9 +105,14 @@ namespace Caos.Simulation
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = 1f;      // celular deitado: escala pela altura
 
+            var seguro = new GameObject("AreaSegura", typeof(RectTransform));
+            var seguroRt = (RectTransform)seguro.transform;
+            seguroRt.SetParent(canvasGo.transform, false);
+            SafeArea.Aplicar(seguroRt, 10f);
+
             _painel = new GameObject("Painel", typeof(RectTransform));
             var rt = (RectTransform)_painel.transform;
-            rt.SetParent(canvasGo.transform, false);
+            rt.SetParent(seguroRt, false);
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
             rt.pivot = new Vector2(0.5f, 0f);
             rt.anchoredPosition = new Vector2(0f, 18f);

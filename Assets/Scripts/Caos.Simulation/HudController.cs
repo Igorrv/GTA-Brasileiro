@@ -277,7 +277,14 @@ namespace Caos.Simulation
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = 0.5f;
-            Transform root = canvas.transform;
+
+            // Tudo do HUD pendura num painel de área segura: em celular com notch, o dinheiro ficava
+            // atrás do recorte e o radar era comido pelo canto arredondado.
+            var seguro = new GameObject("AreaSegura", typeof(RectTransform));
+            var seguroRt = (RectTransform)seguro.transform;
+            seguroRt.SetParent(canvas.transform, false);
+            SafeArea.Aplicar(seguroRt, 10f);
+            Transform root = seguroRt;
 
             // ---- necessidades (sup. esquerdo), em painel alinhado: rótulo | barra | valor ----
             var att = Child("Necessidades", root);

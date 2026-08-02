@@ -29,7 +29,13 @@ namespace Caos.Simulation
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = 0.5f;
-            Transform root = canvas.transform;
+
+            // botões também respeitam a área segura: na barra de gestos eles ficavam inalcançáveis
+            var seguro = new GameObject("AreaSegura", typeof(RectTransform));
+            var seguroRt = (RectTransform)seguro.transform;
+            seguroRt.SetParent(canvas.transform, false);
+            SafeArea.Aplicar(seguroRt, 6f);
+            Transform root = seguroRt;
 
             // ---- zona do joystick (metade esquerda) ----
             var joyZone = Child("JoystickZone", root);

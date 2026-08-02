@@ -78,8 +78,12 @@ namespace Caos.Simulation
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
 
+            var seguro = new GameObject("AreaSegura", typeof(RectTransform)).GetComponent<RectTransform>();
+            seguro.SetParent(canvasGo.transform, false);
+            SafeArea.Aplicar(seguro, 10f);
+
             var moldura = new GameObject("Moldura", typeof(RectTransform)).GetComponent<RectTransform>();
-            moldura.SetParent(canvasGo.transform, false);
+            moldura.SetParent(seguro, false);
             moldura.anchorMin = Vector2.zero; moldura.anchorMax = Vector2.zero;
             moldura.pivot = Vector2.zero;
             moldura.anchoredPosition = new Vector2(26f, 26f);
