@@ -38,6 +38,7 @@ namespace Caos.Simulation
 
         private CharacterController _cc;
         private Camera              _cam;
+        private ThirdPersonCamera   _cameraTerceiraPessoa;
         private PlayerAttributes    _attrs;
         private PlayerActions       _acoes;
         private Vector3             _vel;         // velocidade horizontal suavizada
@@ -53,6 +54,7 @@ namespace Caos.Simulation
         {
             _cc = GetComponent<CharacterController>();
             _cam = Camera.main;
+            if (_cam != null) _cameraTerceiraPessoa = _cam.GetComponent<ThirdPersonCamera>();
             _acoes = GetComponent<PlayerActions>();
         }
 
@@ -71,7 +73,11 @@ namespace Caos.Simulation
 
         private void Update()
         {
-            if (_cam == null) _cam = Camera.main;
+            if (_cam == null)
+            {
+                _cam = Camera.main;
+                if (_cam != null) _cameraTerceiraPessoa = _cam.GetComponent<ThirdPersonCamera>();
+            }
             float dt = Time.deltaTime;
 
             Vector2 m = GameInput.Move;
@@ -80,6 +86,13 @@ namespace Caos.Simulation
             // direção relativa à câmera (plano XZ)
             Vector3 fwd   = _cam ? Vector3.Scale(_cam.transform.forward, new Vector3(1, 0, 1)).normalized : Vector3.forward;
             Vector3 right = _cam ? Vector3.Scale(_cam.transform.right,   new Vector3(1, 0, 1)).normalized : Vector3.right;
+            // A base da órbita não inclui look-ahead, tremor nem a animação de olhar para trás. Usá-la
+            // deixa a direção previsível mesmo enquanto a câmera ainda está terminando uma transição.
+            if (_cameraTerceiraPessoa != null)
+            {
+                fwd = _cameraTerceiraPessoa.FrenteMovimento;
+                right = _cameraTerceiraPessoa.DireitaMovimento;
+            }
             Vector3 desejo = fwd * m.y + right * m.x;
 
             bool agachado = _acoes != null && _acoes.Agachado;
