@@ -1,7 +1,7 @@
 {
     "name": "Caos.Bootstrap",
     "rootNamespace": "Caos.Bootstrap",
-    "references": [ "Caos.Core", "Caos.Data", "Caos.World", "Caos.Gameplay", "Caos.Save" ],
+    "references": [ "Caos.Core", "Caos.Data", "Caos.Content", "Caos.World", "Caos.Gameplay", "Caos.Save" ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

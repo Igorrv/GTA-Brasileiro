@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Caos.Content;
 using Caos.Core;
 using Caos.Data;
 using Caos.Gameplay;
