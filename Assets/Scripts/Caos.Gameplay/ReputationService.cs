@@ -12,11 +12,7 @@ namespace Caos.Gameplay
         private readonly Dictionary<FactionId, int>  _faction  = new Dictionary<FactionId, int>();
         private readonly Dictionary<DistrictId, int> _district = new Dictionary<DistrictId, int>();
 
-        public ReputationService()
-        {
-            foreach (var f in System.Enum.GetValues(typeof(FactionId)))  _faction[(FactionId)f] = 0;
-            foreach (var d in System.Enum.GetValues(typeof(DistrictId))) _district[(DistrictId)d] = 0;
-        }
+        public ReputationService() => Zerar();
 
         public int Get(string alvo) => TryGet(alvo, out var v) ? v : 0;
 
@@ -63,13 +59,31 @@ namespace Caos.Gameplay
             return r;
         }
 
-        /// <summary>Restaura estado a partir do save.</summary>
+        /// <summary>
+        /// Restaura estado a partir do save. Escreve o valor salvo <b>por cima</b> do atual, não soma:
+        /// carregar um save é reposicionar o jogador onde ele parou, e somar faria a reputação dobrar
+        /// se o save fosse aplicado sobre uma sessão que já tinha reputação (voltar ao menu e carregar,
+        /// por exemplo).
+        /// </summary>
         public void Hydrate(System.Collections.Generic.List<RepEntry> faction, System.Collections.Generic.List<RepEntry> district)
         {
-            foreach (var e in faction ?? new System.Collections.Generic.List<RepEntry>())
-                ApplyDelta(e.alvo, e.valor);
-            foreach (var e in district ?? new System.Collections.Generic.List<RepEntry>())
-                ApplyDelta(e.alvo, e.valor);
+            Zerar();
+            if (faction != null)  foreach (var e in faction)  Definir(e.alvo, e.valor);
+            if (district != null) foreach (var e in district) Definir(e.alvo, e.valor);
+        }
+
+        private void Zerar()
+        {
+            foreach (var f in System.Enum.GetValues(typeof(FactionId)))  _faction[(FactionId)f] = 0;
+            foreach (var d in System.Enum.GetValues(typeof(DistrictId))) _district[(DistrictId)d] = 0;
+        }
+
+        private void Definir(string alvo, int valor)
+        {
+            if (System.Enum.TryParse<FactionId>(alvo, true, out var f))
+                _faction[f] = Clamp(valor);
+            else if (System.Enum.TryParse<DistrictId>(alvo, true, out var d))
+                _district[d] = Clamp(valor);
         }
 
         public struct RepEntry { public string alvo; public int valor; }

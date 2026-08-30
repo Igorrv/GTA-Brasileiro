@@ -1,7 +1,7 @@
 {
-    "name": "Caos.Core",
-    "rootNamespace": "Caos.Core",
-    "references": [],
+    "name": "Caos.Content",
+    "rootNamespace": "Caos.Content",
+    "references": [ "Caos.Core", "Caos.Data" ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -10,5 +10,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": true
+    "noEngineReferences": false
 }

@@ -60,6 +60,12 @@ crashlytics-build.properties
 Thumbs.db
 Desktop.ini
 
+# ===================== Testes sem Unity =====================
+# Projetos .NET gerados a partir dos .asmdef (tools/testes-sem-unity/gerar_projetos.py).
+/tools/testes-sem-unity/gerado/
+/tools/**/[Bb]in/
+/tools/**/[Oo]bj/
+
 # ===================== Recovery / local =====================
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta

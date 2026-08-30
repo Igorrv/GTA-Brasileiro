@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  arquitetura:
+    name: Arquitetura (grafo de assemblies)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verificar dependências unidirecionais
+        run: python3 scripts/verificar_arquitetura.py
+
+  testes:
+    name: Testes das regras (sem Unity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Gerar projetos a partir dos asmdef
+        run: python3 tools/testes-sem-unity/gerar_projetos.py
+      - name: Compilar e rodar os testes
+        run: dotnet test tools/testes-sem-unity/gerado/Caos.Testes/Caos.Testes.csproj --logger "console;verbosity=normal"

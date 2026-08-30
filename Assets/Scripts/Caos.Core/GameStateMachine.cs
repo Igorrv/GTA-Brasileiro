@@ -13,7 +13,7 @@ namespace Caos.Core
 
     /// <summary>
     /// Máquina de estados simples pushdown. Mantém a fase atual do jogo.
-    /// Sistpios consultam <see cref="Current"/> para saber se devem simular (Playing) ou não.
+    /// Sistemas consultam <see cref="Current"/> para saber se devem simular (Playing) ou não.
     /// </summary>
     public sealed class GameStateMachine
     {
@@ -24,7 +24,7 @@ namespace Caos.Core
             if (state == null) throw new ArgumentNullException(nameof(state));
             Current?.Exit();
             Current = state;
-            UnityEngine.Debug.Log($"[FSM] -> {state.Name}");
+            CaosLog.Info($"[FSM] -> {state.Name}");
             Current.Enter();
         }
 

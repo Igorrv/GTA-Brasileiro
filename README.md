@@ -105,8 +105,11 @@ flowchart TB
   end
 
   subgraph data [Data]
+    DTO[DTOs + GameCatalogs]
+  end
+
+  subgraph content [Content]
     CL[CatalogLoader]
-    DTO[DTOs + JSON]
   end
 
   subgraph world [World]
@@ -136,9 +139,11 @@ flowchart TB
   GB --> GM
   GM --> core
   GM --> data
+  GM --> content
   GM --> world
   GM --> gameplay
   GM --> save
+  content --> data
   data --> core
   world --> data
   gameplay --> world
@@ -152,24 +157,40 @@ flowchart TB
 
 ```
 Assets/Scripts/
-├── Caos.Core/         EventBus, ServiceLocator, ITickable, GameStateMachine
-├── Caos.Data/         DTOs + CatalogLoader  ← StreamingAssets/Data/*.json
+├── Caos.Core/         EventBus, ServiceLocator, ITickable, GameStateMachine, CaosLog/CaosMath/Random
+├── Caos.Data/         DTOs + GameCatalogs
 ├── Caos.World/        TimeOfDay, WorldState
 ├── Caos.Gameplay/     Atributos, Economia, Reputação, Eventos, Missões
+├── Caos.Content/      CatalogLoader  ← StreamingAssets/Data/*.json
 ├── Caos.Save/         SaveData + SaveSystem (JSON local)
 ├── Caos.Bootstrap/    GameManager (composition root + tick + autosave)
 └── Caos.Simulation/   Cena jogável, cidade, veículos, UI, áudio
     └── City/          CityLayout, CityGenerator, Props, Palette, VehicleFactory
+
+Assets/Tests/EditMode/ Testes das regras (rodam no Test Runner e também sem Unity)
 ```
 
-| Camada | Responsabilidade |
-|---|---|
-| **Core** | Infra compartilhada sem Unity-specific pesado |
-| **Data** | Catálogos JSON → DTOs tipados |
-| **World** | Relógio do mundo, clima, Caos, estrelas |
-| **Gameplay** | Regras puras (atributos, economia, missões) |
-| **Simulation** | MonoBehaviours, física, geração da cidade, UI |
-| **Bootstrap** | Composition root — única entrada do tick loop |
+| Camada | Engine? | Responsabilidade |
+|---|---|---|
+| **Core** | não | Infra compartilhada: eventos, serviços, log, matemática, sorteio |
+| **Data** | não | Catálogos tipados (DTOs) |
+| **World** | não | Relógio do mundo, clima, Caos, estrelas |
+| **Gameplay** | não | Regras puras (atributos, economia, missões) |
+| **Content** | sim | Leitura dos JSON de `StreamingAssets` |
+| **Save** | sim | Persistência JSON local |
+| **Simulation** | sim | MonoBehaviours, física, geração da cidade, UI |
+| **Bootstrap** | sim | Composition root — única entrada do tick loop |
+
+As quatro camadas de cima **não compilam contra `UnityEngine`** — é o que permite testá-las num
+runner comum de .NET, sem licença de Unity:
+
+```bash
+python3 scripts/verificar_arquitetura.py                  # grafo unidirecional, núcleo sem engine
+python3 tools/testes-sem-unity/gerar_projetos.py
+dotnet test tools/testes-sem-unity/gerado/Caos.Testes/Caos.Testes.csproj
+```
+
+Os mesmos arquivos de teste rodam no **Test Runner** do Editor (`Window › General › Test Runner`).
 
 Mais profundo: [docs/architecture.md](docs/architecture.md) · [docs/12-tecnologia-implementacao.md](docs/12-tecnologia-implementacao.md)
 

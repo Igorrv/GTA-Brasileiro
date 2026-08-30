@@ -21,7 +21,7 @@ namespace Caos.Gameplay
         public static float XpParaNivel(int nivel)
         {
             if (nivel <= 1) return 0f;
-            return 120f * UnityEngine.Mathf.Pow(nivel - 1, 1.45f);
+            return 120f * CaosMath.Potencia(nivel - 1, 1.45f);
         }
 
         public float XpDoNivelAtual  => XpParaNivel(Nivel);
@@ -34,7 +34,7 @@ namespace Caos.Gameplay
             {
                 if (Nivel >= NivelMaximo) return 1f;
                 float piso = XpDoNivelAtual, teto = XpDoProximo;
-                return teto <= piso ? 0f : UnityEngine.Mathf.Clamp01((Xp - piso) / (teto - piso));
+                return teto <= piso ? 0f : CaosMath.Limitar01((Xp - piso) / (teto - piso));
             }
         }
 
@@ -78,11 +78,11 @@ namespace Caos.Gameplay
             if (Nivel > antes)
             {
                 EventBus<SubiuDeNivel>.Publish(new SubiuDeNivel { nivel = Nivel, titulo = Titulo });
-                UnityEngine.Debug.Log($"[XP] Subiu para o nível {Nivel} — {Titulo}.");
+                CaosLog.Info($"[XP] Subiu para o nível {Nivel} — {Titulo}.");
             }
             else if (!string.IsNullOrEmpty(motivo))
             {
-                UnityEngine.Debug.Log($"[XP] +{xp:F0} ({motivo}) — total {Xp:F0}.");
+                CaosLog.Info($"[XP] +{xp:F0} ({motivo}) — total {Xp:F0}.");
             }
         }
 
@@ -90,7 +90,7 @@ namespace Caos.Gameplay
         public void Hydrate(float xp, int nivel)
         {
             Xp = xp;
-            Nivel = UnityEngine.Mathf.Clamp(nivel < 1 ? 1 : nivel, 1, NivelMaximo);
+            Nivel = CaosMath.Limitar(nivel < 1 ? 1 : nivel, 1, NivelMaximo);
             EventBus<XpMudou>.Publish(new XpMudou { xp = Xp, nivel = Nivel, progresso = Progresso01 });
         }
     }
