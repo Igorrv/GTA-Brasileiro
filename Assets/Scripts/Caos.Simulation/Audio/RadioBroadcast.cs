@@ -150,7 +150,7 @@ namespace Caos.Simulation.Audio
             // emissora de verdade é nivelada em loudness: a AM perde nível na banda estreita e no
             // desvanecimento, e a de notícias é quase só voz. Sem compensar, girar o dial vira um
             // sobe-e-desce de volume e a AM parece "a estação fraca".
-            e.Ganho = e.Genero == Genero.Noticias ? 1.5f : (e.Am ? 1.3f : 1f);
+            e.Ganho = e.Genero == Genero.Noticias ? 1.7f : (e.Am ? 1.45f : 1f);
             return e;
         }
 
@@ -302,7 +302,7 @@ namespace Caos.Simulation.Audio
                 }
 
                 // a saturação de verdade já aconteceu dentro da cadeia; esta é só rede de segurança
-                destino[i] = CaosDsp.Saturar(mix * est.Ganho * 0.9f);
+                destino[i] = CaosDsp.Saturar(mix * est.Ganho);
             }
 
             NivelDeVoz = Mathf.Clamp01(_envVoz * 5f);
