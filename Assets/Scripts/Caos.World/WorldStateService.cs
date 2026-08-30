@@ -25,14 +25,14 @@ namespace Caos.World
         public void ApplyCaos(float delta)
         {
             var prev = Caos;
-            Caos = UnityEngine.Mathf.Clamp(Caos + delta, 0f, 100f);
-            if (!UnityEngine.Mathf.Approximately(prev, Caos))
+            Caos = CaosMath.Limitar(Caos + delta, 0f, 100f);
+            if (!CaosMath.Aproximadamente(prev, Caos))
                 EventBus<CaosMudou>.Publish(new CaosMudou { valor = Caos });
         }
 
         public void SetStars(int value)
         {
-            value = UnityEngine.Mathf.Clamp(value, 0, 5);
+            value = CaosMath.Limitar(value, 0, 5);
             if (Stars == value) return;
             Stars = value;
             EventBus<EstrelasMudou>.Publish(new EstrelasMudou { valor = Stars });
@@ -43,8 +43,8 @@ namespace Caos.World
         /// <summary>Restaura estado a partir do save.</summary>
         public void Hydrate(float caos, int stars, DistrictId district, WeatherState weather)
         {
-            Caos = UnityEngine.Mathf.Clamp(caos, 0f, 100f);
-            Stars = UnityEngine.Mathf.Clamp(stars, 0, 5);
+            Caos = CaosMath.Limitar(caos, 0f, 100f);
+            Stars = CaosMath.Limitar(stars, 0, 5);
             CurrentDistrict = district;
             Weather = weather;
         }

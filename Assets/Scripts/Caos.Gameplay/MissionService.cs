@@ -44,7 +44,7 @@ namespace Caos.Gameplay
             _completed.Add(id);
             _econ.Add(m.recompensaRs);
             EventBus<MissaoConcluida>.Publish(new MissaoConcluida { id = id, rs = m.recompensaRs, xp = m.recompensaXp });
-            UnityEngine.Debug.Log($"[Missão] Concluída: {id} '{m.titulo}' (+R$ {m.recompensaRs}, +{m.recompensaXp} XP).");
+            CaosLog.Info($"[Missão] Concluída: {id} '{m.titulo}' (+R$ {m.recompensaRs}, +{m.recompensaXp} XP).");
             return true;
         }
 

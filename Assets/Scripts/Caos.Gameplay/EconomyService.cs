@@ -37,7 +37,7 @@ namespace Caos.Gameplay
             float bump = 0.01f + (caos / 100f) * 0.02f; // 1%..3% por semana conforme caos
             IpcCaos += bump;
             EventBus<DinheiroMudou>.Publish(new DinheiroMudou { rs = Rs, caosCash = CaosCash });
-            UnityEngine.Debug.Log($"[Economia] IPC-Caos subiu para {IpcCaos:P1} (+{bump:P1}).");
+            CaosLog.Info($"[Economia] IPC-Caos subiu para {IpcCaos:P1} (+{bump:P1}).");
         }
 
         /// <summary>Preço corrigido pela inflação: preço_base × (1 + IPC-Caos).</summary>

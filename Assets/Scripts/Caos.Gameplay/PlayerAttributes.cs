@@ -25,6 +25,8 @@ namespace Caos.Gameplay
 
         public int Order => 20;
 
+        private bool _morteAnunciada;
+
         // decaimentos por SEGUNDO (convertidos dos valores/min do docs/00)
         private const float kFomeDecay     = 0.5f / 60f;     // -0,5/min
         private const float kSedeDecay     = 0.9f / 60f;     // -0,9/min — sede aperta antes da fome
@@ -51,13 +53,23 @@ namespace Caos.Gameplay
 
             if (Energia <= 0f)
             {
-                // desmaio por exaustão
-                EventBus<PlayerMorreu>.Publish(new PlayerMorreu { });
-                Energia = 25f; // recupera um pouco para evitar loop de morte
+                Energia = 25f;      // desmaio por exaustão; recupera um pouco para evitar loop de morte
+                AnunciarMorte();
             }
+            else if (Saude <= 0f) AnunciarMorte();
+            else _morteAnunciada = false;
+        }
 
-            if (Saude <= 0f)
-                EventBus<PlayerMorreu>.Publish(new PlayerMorreu { });
+        /// <summary>
+        /// Publica <see cref="PlayerMorreu"/> uma vez por queda. Sem a trava, saúde zerada republicava o
+        /// evento a cada frame durante toda a tela de WASTED — e quem escuta (o ciclo de vida) refazia o
+        /// respawn 60 vezes por segundo.
+        /// </summary>
+        private void AnunciarMorte()
+        {
+            if (_morteAnunciada) return;
+            _morteAnunciada = true;
+            EventBus<PlayerMorreu>.Publish(new PlayerMorreu { });
         }
 
         /// <summary>Aplica delta bruto num atributo (vindo de ImpactResolver ou de um item comprado).</summary>
@@ -84,6 +96,7 @@ namespace Caos.Gameplay
         public void Hydrate(float fome, float sede, float energia, float sanidade, float saude)
         {
             Fome = fome; Sede = sede; Energia = energia; Sanidade = sanidade; Saude = saude;
+            _morteAnunciada = false;
             PublishSnapshot();
         }
 
