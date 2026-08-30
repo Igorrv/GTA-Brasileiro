@@ -15,11 +15,35 @@ namespace Caos.Simulation
     public static class GameInput
     {
         // ---- estado virtual (TouchControls escreve) ----
-        public static Vector2 VirtualMove;
-        public static bool   VirtualRun, VirtualBrake, VirtualOrbitActive;
-        public static Vector2 VirtualOrbit;
-        private static bool _qInteract, _qUse, _qRefuel, _qRadio, _qPause;
+        private const float ZonaMortaMovimento = 0.14f;
+        private static Vector2 _virtualMove;
 
+        /// <summary>
+        /// Eixo bruto do joystick convertido para uma resposta radial com zona morta. A faixa restante
+        /// é remapeada até 1, então eliminar tremor no centro não sacrifica esterço ou corrida máximos.
+        /// </summary>
+        public static Vector2 VirtualMove
+        {
+            get => _virtualMove;
+            set => _virtualMove = AplicarZonaMortaRadial(value, ZonaMortaMovimento);
+        }
+
+        public static bool   VirtualRun, VirtualBrake, VirtualOrbitActive, VirtualLookBehind;
+        private static Vector2 _virtualOrbit;
+        /// <summary>Compatibilidade para produtores antigos; prefira <see cref="AcumularOrbitaVirtual"/>.</summary>
+        public static Vector2 VirtualOrbit
+        {
+            get => _virtualOrbit;
+            set => _virtualOrbit = value;
+        }
+        private static bool _qJump, _qInteract, _qUse, _qRefuel, _qRadio, _qPause;
+
+        public static void QueueJump()       { _qJump     = true; }
+        public static void CancelarPuloVirtual()
+        {
+            _qJump = false;
+            VirtualJump = false;
+        }
         public static void QueueInteract()   { _qInteract = true; }
         public static void QueueUse()        { _qUse      = true; }
         public static void QueueRefuel()     { _qRefuel   = true; }
@@ -65,12 +89,69 @@ namespace Caos.Simulation
 
         /// <summary>Espaço — pular (a pé). No veículo a mesma tecla é o freio; os dois controladores
         /// nunca estão ativos ao mesmo tempo, então não há conflito.</summary>
-        public static bool   Jump        => Input.GetKeyDown(KeyCode.Space) || VirtualJump;
+        public static bool Jump
+        {
+            get
+            {
+                bool t = _qJump || VirtualJump;
+                _qJump = false;
+                VirtualJump = false;
+                return Input.GetKeyDown(KeyCode.Space) || t;
+            }
+        }
 
         /// <summary>Ctrl esquerdo / C — freio de mão (trava a traseira e derrapa).</summary>
         public static bool   Handbrake   => Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.C) || VirtualHandbrake;
         public static bool   CameraOrbit => Input.GetMouseButton(1) || VirtualOrbitActive;
-        public static Vector2 Orbit      => VirtualOrbitActive ? VirtualOrbit : new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        public static Vector2 Orbit      => VirtualOrbitActive ? ConsumirOrbitaVirtual() : new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        /// <summary>V/botão central do mouse ou botão touch — segura a câmera olhando para trás.</summary>
+        public static bool   LookBehind  => Input.GetKey(KeyCode.V) || Input.GetMouseButton(2) || VirtualLookBehind;
+
+        /// <summary>
+        /// Soma deltas que podem chegar mais de uma vez no mesmo frame. A câmera consome o total uma
+        /// única vez, impedindo que o último delta continue girando quando o dedo para sobre a tela.
+        /// </summary>
+        public static void AcumularOrbitaVirtual(Vector2 delta)
+            => _virtualOrbit = Vector2.ClampMagnitude(_virtualOrbit + delta, 18f);
+        public static void LimparOrbitaVirtual() => _virtualOrbit = Vector2.zero;
+
+        private static Vector2 ConsumirOrbitaVirtual()
+        {
+            Vector2 delta = _virtualOrbit;
+            _virtualOrbit = Vector2.zero;
+            return delta;
+        }
+
+        /// <summary>
+        /// Remove ruído no centro de qualquer stick sem criar um degrau na saída da zona morta.
+        /// Público para que controles alternativos (gamepad/gyro) usem exatamente a mesma curva.
+        /// </summary>
+        public static Vector2 AplicarZonaMortaRadial(Vector2 valor, float zonaMorta)
+        {
+            float magnitude = Mathf.Min(1f, valor.magnitude);
+            zonaMorta = Mathf.Clamp(zonaMorta, 0f, 0.95f);
+            if (magnitude <= zonaMorta || magnitude <= Mathf.Epsilon) return Vector2.zero;
+
+            float normalizada = (magnitude - zonaMorta) / (1f - zonaMorta);
+            normalizada = Mathf.Pow(normalizada, 1.08f);
+            return valor / valor.magnitude * normalizada;
+        }
+
+        /// <summary>Evita comandos presos após perder foco, trocar cena ou desmontar o HUD touch.</summary>
+        public static void ResetVirtualControls()
+        {
+            _virtualMove       = Vector2.zero;
+            _virtualOrbit      = Vector2.zero;
+            VirtualRun         = false;
+            VirtualBrake       = false;
+            VirtualHandbrake   = false;
+            VirtualJump        = false;
+            VirtualCrouch      = false;
+            VirtualOrbitActive = false;
+            VirtualLookBehind  = false;
+            _qJump = _qInteract = _qUse = _qRefuel = _qRadio = _qPause = false;
+            _qSit = _qPhone = _qHorn = false;
+        }
 
         // ---- one-shot (borda): consome o flag virtual no primeiro acesso do frame ----
         public static bool Interact

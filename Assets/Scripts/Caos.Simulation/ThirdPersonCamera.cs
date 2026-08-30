@@ -20,18 +20,21 @@ namespace Caos.Simulation
         [SerializeField] private Transform target;
 
         [Header("Enquadramento")]
-        // A pé: câmera sobre o ombro direito, perto e baixa — o personagem ocupa a tela e dá pra ver
-        // o que ele está fazendo (agachado, sentado, bebendo). Longe demais vira formiga andando.
-        [SerializeField] private Vector3 offsetAPe    = new Vector3(0.55f, 1.35f, -3.1f);
-        [SerializeField] private Vector3 offsetCarro  = new Vector3(0f, 2.9f, -6.6f);
-        [SerializeField] private float   alturaOlhar  = 1.25f;
-        [SerializeField] private float   alturaOlharCarro = 1.05f;
+        [SerializeField] private Vector3 offsetAPe = new Vector3(0.62f, 0.72f, -3.25f);
+        [SerializeField] private Vector3 offsetCarro = new Vector3(0f, 1.8f, -6.2f);
+        [SerializeField] private Vector3 offsetCarroEmVelocidade = new Vector3(0f, 0.35f, -1.2f);
+        [SerializeField] private float alturaOlhar = 1.25f;
+        [SerializeField] private float alturaOlharCarro = 1.05f;
+        [SerializeField] private float transicaoContexto = 7.5f;
 
         [Header("Suavização")]
         [SerializeField] private float seguirLerp = 11f;
         [SerializeField] private float orbitSens  = 2.5f;
         [SerializeField] private float minPitch   = -18f;
         [SerializeField] private float maxPitch   = 68f;
+        [SerializeField] private float atrasoRecentralizar = 0.9f;
+        [SerializeField] private float recentralizarLento = 2.2f;
+        [SerializeField] private float recentralizarRapido = 5.2f;
 
         [Header("Campo de visão")]
         [SerializeField] private float fovBase   = 62f;
@@ -39,18 +42,45 @@ namespace Caos.Simulation
         [SerializeField] private float velRef    = 130f;   // km/h para o FOV cheio
 
         [Header("Colisão")]
-        [SerializeField] private float raioCamera = 0.32f;
-        [SerializeField] private float folga      = 0.22f;
+        [SerializeField] private float raioCamera = 0.36f;
+        [SerializeField] private float folga      = 0.16f;
 
         private float _yaw;
-        private float _pitch = 12f;
+        private float _pitch = 10f;
         private Camera _cam;
         private PlayerVehicleLink _link;
         private VehicleController _veiculo;
         private Vector3 _posAnterior;
+        private Vector3 _adianteSuave;
+        private bool _temPosAnterior;
+        private bool _inicializada;
+        private float _contextoCarro;
+        private float _olharAtras;
+        private float _ultimoOrbit = -999f;
         private float _tremor;
+        // Folga para os colliders do próprio carro + quarteirão/props sem alocar em becos densos.
+        private readonly RaycastHit[] _hitsCamera = new RaycastHit[64];
 
-        public void Bind(Transform t) => target = t;
+        /// <summary>
+        /// Base estável da órbita para a locomoção a pé. Diferente de <c>transform.forward</c>, ela
+        /// não vira durante a animação de olhar para trás.
+        /// </summary>
+        public Vector3 FrenteMovimento => Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
+        public Vector3 DireitaMovimento => Quaternion.Euler(0f, _yaw, 0f) * Vector3.right;
+
+        public void Bind(Transform t)
+        {
+            if (target == t) return;
+
+            target = t;
+            _temPosAnterior = t != null;
+            _posAnterior = t != null ? t.position : Vector3.zero;
+            _adianteSuave = Vector3.zero;
+
+            // O primeiro Bind acontece antes do primeiro frame. Posicionar aqui evita a câmera viajar
+            // desde a origem do mundo durante os segundos mais importantes da primeira sessão.
+            if (!_inicializada && t != null) InicializarPosicao();
+        }
 
         /// <summary>Ligado pelo WorldBuilder para a câmera saber quando está no carro.</summary>
         public void Contexto(PlayerVehicleLink link, VehicleController veiculo)
@@ -66,38 +96,53 @@ namespace Caos.Simulation
 
         private void LateUpdate()
         {
-            if (target == null) return;
-            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+            IFonteDeEntrada entrada = EntradaLocal.Instancia;
+            bool orbitando = entrada.CameraOrbit;
+            // Consome o delta mesmo pausado/sem alvo para ele nunca reaparecer como salto ao retomar.
+            Vector2 orbitaFrame = orbitando ? entrada.Orbit : Vector2.zero;
 
-            if (GameInput.CameraOrbit)
+            if (target == null) return;
+            float dt = Time.deltaTime;
+            if (dt <= 0f) return;
+            if (!_inicializada) InicializarPosicao();
+
+            if (orbitando)
             {
-                Vector2 o = GameInput.Orbit;
                 float sens = orbitSens * SettingsMenu.Sensibilidade;
-                _yaw   += o.x * sens;
-                _pitch -= o.y * sens * (SettingsMenu.InverterY ? -1f : 1f);
+                _yaw   += orbitaFrame.x * sens;
+                _pitch -= orbitaFrame.y * sens * (SettingsMenu.InverterY ? -1f : 1f);
                 _pitch  = Mathf.Clamp(_pitch, minPitch, maxPitch);
+                _ultimoOrbit = Time.unscaledTime;
             }
 
             bool dirigindo = _link != null && !_link.OnFoot;
-            Vector3 offset = dirigindo ? offsetCarro : offsetAPe;
+            float kmh = _veiculo != null && dirigindo ? Mathf.Abs(_veiculo.SpeedKmh) : 0f;
+            float velocidade01 = Mathf.Clamp01(kmh / Mathf.Max(1f, velRef));
+            _contextoCarro = Mathf.Lerp(_contextoCarro, dirigindo ? 1f : 0f, Fator(transicaoContexto, dt));
 
-            // dirigindo, a câmera se alinha atrás do carro sozinha (só solta se o jogador orbitar)
-            if (dirigindo && !GameInput.CameraOrbit)
-                _yaw = Mathf.LerpAngle(_yaw, target.eulerAngles.y, 3.2f * dt);
+            bool olharAtras = entrada.LookBehind;
+            _olharAtras = Mathf.Lerp(_olharAtras, olharAtras ? 1f : 0f, Fator(12f, dt));
+            if (olharAtras) _ultimoOrbit = Time.unscaledTime;
 
-            Quaternion rot = Quaternion.Euler(_pitch, _yaw, 0f);
-            Vector3 foco = target.position + Vector3.up * (dirigindo ? alturaOlharCarro : alturaOlhar);
-            Vector3 desejada = foco + rot * offset;
-
-            // ---- colisão: puxa a câmera para perto se houver parede no caminho ----
-            Vector3 dir = desejada - foco;
-            float dist = dir.magnitude;
-            if (dist > 0.01f && Physics.SphereCast(foco, raioCamera, dir / dist, out RaycastHit hit,
-                                                   dist, CaosLayers.MascaraCamera, QueryTriggerInteraction.Ignore))
+            // Depois de um swipe, preserva a vista por um instante; em velocidade a perseguição volta
+            // mais firme para a traseira do carro, e devagar deixa espaço para manobrar a câmera.
+            if (dirigindo && !orbitando && !olharAtras &&
+                Time.unscaledTime - _ultimoOrbit >= atrasoRecentralizar)
             {
-                if (!hit.collider.transform.IsChildOf(target))
-                    desejada = foco + (dir / dist) * Mathf.Max(0.8f, hit.distance - folga);
+                float taxa = Mathf.Lerp(recentralizarLento, recentralizarRapido, velocidade01);
+                _yaw = Mathf.LerpAngle(_yaw, target.eulerAngles.y, Fator(taxa, dt));
             }
+
+            float curvaAtras = _olharAtras * _olharAtras * (3f - 2f * _olharAtras);
+            float yawAtras = (dirigindo ? target.eulerAngles.y : _yaw) + 179.9f;
+            float yawVisual = Mathf.LerpAngle(_yaw, yawAtras, curvaAtras);
+            Quaternion rot = Quaternion.Euler(_pitch, yawVisual, 0f);
+
+            Vector3 offsetCarroAtual = offsetCarro + offsetCarroEmVelocidade * velocidade01;
+            Vector3 offset = Vector3.Lerp(offsetAPe, offsetCarroAtual, _contextoCarro);
+            float altura = Mathf.Lerp(alturaOlhar, alturaOlharCarro, _contextoCarro);
+            Vector3 foco = target.position + Vector3.up * altura;
+            Vector3 desejada = foco + rot * offset;
 
             // ---- solavanco de buraco ----
             if (_veiculo != null && Time.time - _veiculo.BuracoSentido < 0.35f) _tremor = 1f;
@@ -105,29 +150,125 @@ namespace Caos.Simulation
             if (_tremor > 0f)
             {
                 float amp = _tremor * 0.16f;
-                desejada += new Vector3(Random.Range(-amp, amp), Random.Range(-amp, amp), 0f);
+                float nX = Mathf.PerlinNoise(7.1f, Time.time * 24f) * 2f - 1f;
+                float nY = Mathf.PerlinNoise(19.7f, Time.time * 24f) * 2f - 1f;
+                desejada += rot * new Vector3(nX * amp, nY * amp, 0f);
             }
 
-            // Suavização SEPARADA: a posição segue mais devagar que a mira. Se as duas usam o mesmo
-            // lerp, a câmera "escorrega" nas curvas; separando, ela acompanha o alvo com firmeza e
-            // ainda assim amortece o solavanco do terreno.
-            transform.position = Vector3.Lerp(transform.position, desejada, seguirLerp * dt);
+            // Resolve antes e depois do amortecimento. O segundo passe impede que o lerp atravesse a
+            // quina de um prédio quando o alvo dobra a esquina, mesmo que ambos os extremos sejam válidos.
+            Vector3 segura = ResolverColisao(foco, desejada, out bool bloqueada);
+            float taxaSeguir = bloqueada ? seguirLerp * 2.4f : seguirLerp;
+            Vector3 candidata = Vector3.Lerp(transform.position, segura, Fator(taxaSeguir, dt));
+            transform.position = ResolverColisao(foco, candidata, out _);
 
             // ---- olhar um pouco à frente do movimento ----
-            Vector3 vel = (target.position - _posAnterior) / dt;
+            Vector3 vel = _temPosAnterior ? (target.position - _posAnterior) / dt : Vector3.zero;
             _posAnterior = target.position;
-            Vector3 adiante = Vector3.ClampMagnitude(new Vector3(vel.x, 0f, vel.z) * 0.18f, 4f);
+            _temPosAnterior = true;
+            if (vel.sqrMagnitude > 6400f) vel = Vector3.zero; // teleporte/troca de alvo não vira chicote
 
-            Quaternion miraAlvo = Quaternion.LookRotation((foco + adiante) - transform.position, Vector3.up);
-            transform.rotation = Quaternion.Slerp(transform.rotation, miraAlvo, (seguirLerp * 1.6f) * dt);
+            Vector3 velPlana = new Vector3(vel.x, 0f, vel.z);
+            Vector3 adianteAlvo;
+            if (dirigindo)
+            {
+                Vector3 frentePlana = Vector3.ProjectOnPlane(target.forward, Vector3.up).normalized;
+                Vector3 direcao = velPlana.sqrMagnitude > 0.04f ? velPlana.normalized : frentePlana;
+                adianteAlvo = direcao * Mathf.Lerp(0.55f, 4.2f, velocidade01);
+            }
+            else
+            {
+                adianteAlvo = Vector3.ClampMagnitude(velPlana * 0.12f, 0.8f);
+            }
+
+            // Ao olhar para trás, desloca a mira para a rua que ficou para trás, em vez de continuar
+            // mostrando espaço vazio à frente do capô.
+            adianteAlvo *= Mathf.Lerp(1f, -0.6f, curvaAtras);
+            _adianteSuave = Vector3.Lerp(_adianteSuave, adianteAlvo, Fator(6.5f, dt));
+
+            Vector3 direcaoMira = (foco + _adianteSuave) - transform.position;
+            if (direcaoMira.sqrMagnitude > 0.0001f)
+            {
+                Quaternion miraAlvo = Quaternion.LookRotation(direcaoMira, Vector3.up);
+                transform.rotation = Quaternion.Slerp(transform.rotation, miraAlvo, Fator(seguirLerp * 1.6f, dt));
+            }
 
             // ---- FOV pela velocidade ----
             if (_cam != null)
             {
-                float kmh = _veiculo != null && dirigindo ? Mathf.Abs(_veiculo.SpeedKmh) : vel.magnitude * 3.6f;
-                float alvo = Mathf.Lerp(fovBase, fovMax, Mathf.Clamp01(kmh / velRef));
-                _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, alvo, 4f * dt);
+                float velocidadeFov = dirigindo ? kmh : velPlana.magnitude * 3.6f;
+                float alvo = Mathf.Lerp(fovBase, fovMax, Mathf.Clamp01(velocidadeFov / Mathf.Max(1f, velRef)));
+                _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, alvo, Fator(4f, dt));
             }
+        }
+
+        private void InicializarPosicao()
+        {
+            if (target == null) return;
+
+            _yaw = target.eulerAngles.y;
+            _posAnterior = target.position;
+            _temPosAnterior = true;
+
+            Vector3 foco = target.position + Vector3.up * alturaOlhar;
+            Quaternion rot = Quaternion.Euler(_pitch, _yaw, 0f);
+            transform.position = ResolverColisao(foco, foco + rot * offsetAPe, out _);
+
+            Vector3 direcao = foco - transform.position;
+            if (direcao.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.LookRotation(direcao, Vector3.up);
+
+            _inicializada = true;
+        }
+
+        /// <summary>
+        /// SphereCast sem alocação que escolhe o obstáculo válido mais próximo. O cast simples antigo
+        /// parava no próprio carro (primeiro hit) e nunca enxergava a parede logo atrás dele.
+        /// </summary>
+        private Vector3 ResolverColisao(Vector3 origem, Vector3 destino, out bool bloqueada)
+        {
+            bloqueada = false;
+            Vector3 delta = destino - origem;
+            float distancia = delta.magnitude;
+            if (distancia <= 0.01f) return destino;
+
+            Vector3 direcao = delta / distancia;
+            int quantidade = Physics.SphereCastNonAlloc(origem, raioCamera, direcao, _hitsCamera,
+                distancia, CaosLayers.MascaraCamera, QueryTriggerInteraction.Ignore);
+
+            float distanciaSegura = distancia;
+            for (int i = 0; i < quantidade; i++)
+            {
+                Collider col = _hitsCamera[i].collider;
+                if (col == null || PertenceAoAlvo(col.transform)) continue;
+
+                float candidata = Mathf.Max(0.08f, _hitsCamera[i].distance - folga);
+                if (candidata >= distanciaSegura) continue;
+                distanciaSegura = candidata;
+                bloqueada = true;
+            }
+
+            // Saturação significa que há geometria demais no corredor para garantir qual hit ficou
+            // de fora. Prioriza uma vista muito próxima por um frame em vez de arriscar mostrar o
+            // interior de um quarteirão.
+            if (quantidade == _hitsCamera.Length)
+            {
+                distanciaSegura = Mathf.Min(distanciaSegura, Mathf.Max(0.08f, raioCamera * 0.5f));
+                bloqueada = true;
+            }
+
+            return bloqueada ? origem + direcao * distanciaSegura : destino;
+        }
+
+        private bool PertenceAoAlvo(Transform t)
+        {
+            if (target == null || t == null) return false;
+            return t == target || t.IsChildOf(target) || target.IsChildOf(t);
+        }
+
+        private static float Fator(float taxa, float dt)
+        {
+            return taxa <= 0f ? 1f : 1f - Mathf.Exp(-taxa * dt);
         }
     }
 }

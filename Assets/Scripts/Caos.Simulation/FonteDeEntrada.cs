@@ -31,6 +31,7 @@ namespace Caos.Simulation
         // câmera é sempre local (nunca vem da rede — cada um olha pra onde quiser)
         bool    CameraOrbit { get; }
         Vector2 Orbit       { get; }
+        bool    LookBehind  { get; }
     }
 
     /// <summary>
@@ -54,6 +55,7 @@ namespace Caos.Simulation
         public bool    Horn        => GameInput.Horn;
         public bool    CameraOrbit => GameInput.CameraOrbit;
         public Vector2 Orbit       => GameInput.Orbit;
+        public bool    LookBehind  => GameInput.LookBehind;
     }
 
     /// <summary>
@@ -84,6 +86,7 @@ namespace Caos.Simulation
         // o avatar remoto não controla a câmera de ninguém
         public bool    CameraOrbit => false;
         public Vector2 Orbit       => Vector2.zero;
+        public bool    LookBehind  => false;
 
         public void PressionarJump()     => _jump     = true;
         public void PressionarInteract() => _interact = true;
