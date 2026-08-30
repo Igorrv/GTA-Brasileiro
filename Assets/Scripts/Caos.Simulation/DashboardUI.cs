@@ -29,6 +29,12 @@ namespace Caos.Simulation
         private Image         _avisoReserva, _avisoMotor, _avisoFreio;
         private Font          _font;
 
+        // cache dos valores exibidos: os .text só mudam quando o número muda, evitando
+        // ToString()/interpolação de string a cada quadro dirigindo (GC em hot path).
+        private int   _velExibida = -1;
+        private int   _marchaExibida = -1;
+        private int   _combExibido = -1;
+
         private static readonly Color kMostrador = new Color(0.07f, 0.075f, 0.09f, 0.94f);
         private static readonly Color kAro       = new Color(0.55f, 0.57f, 0.62f, 0.9f);
         private static readonly Color kPonteiro  = new Color(0.95f, 0.30f, 0.25f);
@@ -59,8 +65,18 @@ namespace Caos.Simulation
             _ponteiroVel.localRotation  = Quaternion.Euler(0f, 0f, Angulo(vel01));
             _ponteiroComb.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(-42f, 42f, _vehicle.Fuel01));
 
-            _velNumero.text = ((int)Mathf.Abs(_vehicle.SpeedKmh)).ToString();
-            _marcha.text    = _vehicle.MarchaTxt;
+            int velInt = (int)Mathf.Abs(_vehicle.SpeedKmh);
+            if (velInt != _velExibida)
+            {
+                _velExibida = velInt;
+                _velNumero.text = velInt.ToString();
+            }
+            int marchaAtual = _vehicle.Marcha;
+            if (marchaAtual != _marchaExibida)
+            {
+                _marchaExibida = marchaAtual;
+                _marcha.text = _vehicle.MarchaTxt;
+            }
 
             // régua de marchas: mostra R 1 2 3 4 5 e acende a atual — dá pra ver o câmbio trabalhando
             for (int i = 0; i < _reguaMarchas.Length; i++)
@@ -74,7 +90,13 @@ namespace Caos.Simulation
             if (_litros != null)
             {
                 float litros = _vehicle.Fuel;
-                _litros.text  = $"{litros:F1} L  ·  {_vehicle.Fuel01 * 100f:F0}%  de {_vehicle.TankLiters:F0} L";
+                // só recompõe a string quando o valor de fato muda (arredondado ao décimo de litro)
+                int litrosDec = Mathf.RoundToInt(litros * 10f);
+                if (litrosDec != _combExibido)
+                {
+                    _combExibido = litrosDec;
+                    _litros.text  = $"{litros:F1} L  ·  {_vehicle.Fuel01 * 100f:F0}%  de {_vehicle.TankLiters:F0} L";
+                }
                 _litros.color = _vehicle.Fuel01 < 0.15f ? new Color(0.98f, 0.45f, 0.25f)
                                                         : new Color(0.72f, 0.74f, 0.78f);
             }

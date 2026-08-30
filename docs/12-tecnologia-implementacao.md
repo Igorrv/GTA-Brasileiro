@@ -147,6 +147,12 @@ SaveGame {
 - **Garbage:** evitar alloc em hot path; struct em vez de class em loops; pooled lists.
 - **Áudio:** compressed (Vorbis), instanciado, com limite de vozes simultâneas.
 
+> **Implementado (slice S1–S8):** prompt de interação/roubo e painel do carro só reescrevem
+> texto quando o valor muda (zero alloc por quadro); minimapa e roubo leem listas ativas dos
+> sistemas em vez de `FindObjectsOfType` por tick; `Rigidbody` do alvo é cacheado; e o asset
+> URP é rebaixado em runtime no celular (renderScale 0,8×, 2 cascatas, sem MSAA/HDR), já que o
+> `QualitySettings` de sombra é ignorado pelo URP.
+
 **Budget de calor/bateria:** perfil de 60fps sem throttaring em mid-range por ≥20 min; modo "Economia" (30fps) optativo.
 
 ## 12.11 Fluxo de Carga / Streaming de Mundo

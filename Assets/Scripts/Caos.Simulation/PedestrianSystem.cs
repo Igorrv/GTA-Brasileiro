@@ -23,6 +23,7 @@ namespace Caos.Simulation
         private Caos.World.WorldStateService _world;
         private PlayerVehicleLink         _link;
         private Transform                 _veiculoJogador;
+        private Rigidbody                 _veiculoRb;   // cache: antes, GetComponent por pedestre/frame
         private ObjectPool<Pedestrian>    _pool;
         private readonly List<Pedestrian> _active = new List<Pedestrian>();
         private float _spawnAccum;
@@ -35,6 +36,7 @@ namespace Caos.Simulation
             _player = player;
             _link   = link;
             _veiculoJogador = veiculo;
+            _veiculoRb = veiculo != null ? veiculo.GetComponent<Rigidbody>() : null;
             Caos.Core.ServiceLocator.TryGet(out _world);
             _layout = CityRuntime.Layout;
             _pool   = new ObjectPool<Pedestrian>(Factory, prewarm: maxActive);
@@ -138,10 +140,13 @@ namespace Caos.Simulation
             bool atropelamento = false;
             if (_veiculoJogador != null && _link != null && !_link.OnFoot)
             {
+                // revalida o cache se o veículo sumiu (ex.: trocou de carroceria) — uma vez, não por pedestre
+                if (!ReferenceEquals(_veiculoRb, null) && _veiculoRb.transform != _veiculoJogador) _veiculoRb = null;
+                if (ReferenceEquals(_veiculoRb, null)) _veiculoRb = _veiculoJogador.GetComponent<Rigidbody>();
+
                 Vector3 dv = c.transform.position - _veiculoJogador.position; dv.y = 0f;
                 float distV = dv.magnitude;
-                var rb = _veiculoJogador.GetComponent<Rigidbody>();
-                float vel = rb != null ? rb.linearVelocity.magnitude : 0f;
+                float vel = _veiculoRb != null ? _veiculoRb.linearVelocity.magnitude : 0f;
                 if (distV < 9f && vel > 6f && Vector3.Dot(_veiculoJogador.forward, dv.normalized) > 0.55f)
                 {
                     // pula para a lateral da trajetória do carro

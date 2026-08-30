@@ -30,6 +30,11 @@ namespace Caos.Simulation
         private ObjectPool<PoliceCar> _pool;
         private readonly List<PoliceCar> _active = new List<PoliceCar>();
         private float _blink;
+        private Transform _target;      // alvo atual (jogador a pé ou veículo)
+        private Rigidbody _targetRb;   // cache do Rigidbody do alvo
+
+        /// <summary>Unidades de polícia ativas — o minimapa lê aqui em vez de varrer a cena.</summary>
+        public System.Collections.Generic.IReadOnlyList<PoliceCar> ActiveUnits => _active;
 
         /// <summary>Como o rádio da corporação chama cada nível (usado no HUD).</summary>
         public static string NomeDoNivel(int stars)
@@ -129,6 +134,14 @@ namespace Caos.Simulation
             Transform target = (_link != null && !_link.OnFoot && _vehicle != null) ? _vehicle : _player;
             if (target == null) return;
 
+            // Rigidbody do alvo resolvido uma vez e só de novo quando o alvo troca (a pé ↔ carro).
+            // Antes, GetComponent<Rigidbody>() rodava dentro do loop, por viatura, a cada quadro.
+            if (target != _target)
+            {
+                _target = target;
+                _targetRb = target.GetComponent<Rigidbody>();
+            }
+
             float dt = Time.deltaTime;
             float velocidade = 20f + stars * 2.2f;   // quanto mais estrela, mais pressão
 
@@ -145,9 +158,8 @@ namespace Caos.Simulation
                 // à frente para cortar o caminho — é o que faz a perseguição fechar de verdade.
                 float dAtual = Vector3.Distance(c.transform.position, target.position);
                 Vector3 antecipa = Vector3.zero;
-                var rbAlvo = target.GetComponent<Rigidbody>();
-                if (rbAlvo != null && dAtual < 45f)
-                    antecipa = rbAlvo.linearVelocity * Mathf.Clamp(dAtual / 22f, 0.3f, 1.6f);
+                if (_targetRb != null && dAtual < 45f)
+                    antecipa = _targetRb.linearVelocity * Mathf.Clamp(dAtual / 22f, 0.3f, 1.6f);
 
                 Vector3 to = (target.position + antecipa + c.encircle) - c.transform.position;
                 to.y = 0f;

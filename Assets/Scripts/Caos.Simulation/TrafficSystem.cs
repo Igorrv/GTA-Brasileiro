@@ -42,6 +42,9 @@ namespace Caos.Simulation
         private readonly List<TrafficCar> _active = new List<TrafficCar>();
         private float _spawnAccum, _faseAccum;
 
+        /// <summary>Carros ativos — o roubo de carro lê aqui em vez de varrer a cena.</summary>
+        public System.Collections.Generic.IReadOnlyList<TrafficCar> ActiveUnits => _active;
+
         public void Init(Transform player, GameCatalogs catalogs)
         {
             _player   = player;

@@ -56,6 +56,19 @@ Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/)
   sobe para `Aviso` e as mensagens de `Info` deixam de montar string
 - `EventSystem` recebe `IRandomSource` (opcional) e deixa de sortear do `Random` global que a geração
   da cidade também semeia; o tick também deixou de alocar duas listas por frame
+- **Performance/estabilidade (mobile-first):** zeradas alocações de GC em hot paths.
+  O `InteractionScanner` e o `CarjackSystem` só recompõem o prompt quando o alvo muda (antes,
+  interpolação de string a cada quadro); o `DashboardUI` só reescreve os textos quando o valor
+  muda; o `MinimapSystem` e o `CarjackSystem` param de varrer a cena com `FindObjectsOfType`
+  a cada tick — agora leem listas ativas dos sistemas (`PoliceSystem`, `TrafficSystem`).
+- **Cache de `Rigidbody`:** `PoliceSystem` e `PedestrianSystem` resolvem o `Rigidbody` do
+  alvo uma vez em vez de `GetComponent` por entidade/quadro.
+- **Fallback URP no celular:** `MobilePerf` rebaixa o asset URP ativo em runtime (renderScale
+  0,8×, 2 cascatas, sombra 60 m, sem MSAA/HDR) — no URP o `QualitySettings` de sombra é ignorado.
+  O ajuste de "Qualidade" do `SettingsMenu` agora empurra a sombra para o asset URP em build.
+- **Smoke headless:** `CaosPlaySmoke` verifica `CityRuntime.Pronta` e grava veredito
+  OK/FALHOU (antes só "não estourou").
+- **Null-safety:** `MissionTracker` usa `TryGetValue` no `MissionById`.
 
 ## [0.8.0] — 2026-08 — Slice S1–S8 jogável
 

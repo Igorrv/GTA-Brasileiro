@@ -40,6 +40,11 @@ namespace Caos.Simulation
         private float _proximoRecalculo;
         private int   _trechosUsados;
 
+        // referências resolvidas uma vez (antes, FindObjectsOfType rodava a cada tick de 12 Hz,
+        // alocando array e varrendo a cena inteira — docs/12 §12.10).
+        private MissionTracker _tracker;
+        private PoliceSystem   _police;
+
         /// <summary>Distância pelo trajeto até o destino (m) — o painel de missão mostra.</summary>
         public float DistanciaDaRota { get; private set; }
 
@@ -227,6 +232,22 @@ namespace Caos.Simulation
         // ------------------------------------------------------------------ blips
         private int _usados;
 
+        /// <summary>Resolve o <see cref="MissionTracker"/> uma vez (ele nasce depois do minimapa).</summary>
+        private MissionTracker Tracker()
+        {
+            if (_tracker != null) return _tracker;
+            _tracker = FindObjectOfType<MissionTracker>();
+            return _tracker;
+        }
+
+        /// <summary>Resolve a <see cref="PoliceSystem"/> uma vez e lê sua lista ativa.</summary>
+        private PoliceSystem Policia()
+        {
+            if (_police != null) return _police;
+            _police = FindObjectOfType<PoliceSystem>();
+            return _police;
+        }
+
         private void AtualizarBlips()
         {
             _usados = 0;
@@ -249,16 +270,23 @@ namespace Caos.Simulation
                 }
             }
 
-            // polícia
-            foreach (var pc in FindObjectsOfType<PoliceCar>())
+            // polícia — lê a lista ativa do sistema em vez de varrer a cena
+            var pol = Policia();
+            if (pol != null)
             {
-                Vector3 d = pc.transform.position - centro;
-                if (Mathf.Abs(d.x) > zoom || Mathf.Abs(d.z) > zoom) continue;
-                Blip(d, zoom, new Color(0.25f, 0.5f, 1f), 12f);
+                var unidades = pol.ActiveUnits;
+                for (int i = 0; i < unidades.Count; i++)
+                {
+                    var pc = unidades[i];
+                    if (pc == null) continue;
+                    Vector3 d = pc.transform.position - centro;
+                    if (Mathf.Abs(d.x) > zoom || Mathf.Abs(d.z) > zoom) continue;
+                    Blip(d, zoom, new Color(0.25f, 0.5f, 1f), 12f);
+                }
             }
 
             // destino da missão
-            var tracker = FindObjectOfType<MissionTracker>();
+            var tracker = Tracker();
             if (tracker != null && tracker.TemDestino)
             {
                 Vector3 d = tracker.Destino - centro;
@@ -306,7 +334,7 @@ namespace Caos.Simulation
         {
             _trechosUsados = 0;
 
-            var tracker = FindObjectOfType<MissionTracker>();
+            var tracker = Tracker();
             var layout  = CityRuntime.Layout;
             bool temRota = tracker != null && tracker.TemDestino && layout != null && _player != null;
 

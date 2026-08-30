@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
 namespace Caos.Simulation
@@ -48,12 +50,17 @@ namespace Caos.Simulation
             AudioListener.volume = VolumeGeral;
 
             // qualidade em um botão só: sombra e pós-processamento andam juntos
+            float distSombra;
             switch (Qualidade)
             {
-                case 0:  QualitySettings.shadowDistance = 45f;  QualitySettings.lodBias = 0.7f; break;
-                case 1:  QualitySettings.shadowDistance = 90f;  QualitySettings.lodBias = 1.0f; break;
-                default: QualitySettings.shadowDistance = 150f; QualitySettings.lodBias = 1.4f; break;
+                case 0:  QualitySettings.shadowDistance = 45f;  QualitySettings.lodBias = 0.7f; distSombra = 45f;  break;
+                case 1:  QualitySettings.shadowDistance = 90f;  QualitySettings.lodBias = 1.0f; distSombra = 90f;  break;
+                default: QualitySettings.shadowDistance = 150f; QualitySettings.lodBias = 1.4f; distSombra = 150f; break;
             }
+            // No URP o QualitySettings.shadowDistance é ignorado — quem manda é o asset. Empurra lá
+            // também em build, senão o botão "Qualidade" não muda a sombra de verdade (docs/12 §12.10).
+            // No editor o asset do projeto é respeitado (evita sujar o .asset versionado).
+            if (!Application.isEditor) AplicarSombraUrp(distSombra);
 
             var pos = FindObjectOfType<PostProcessing>();
             if (pos != null) pos.enabled = Qualidade > 0;
@@ -64,6 +71,17 @@ namespace Caos.Simulation
             PlayerPrefs.SetInt(kInverter, InverterY ? 1 : 0);
             PlayerPrefs.SetInt(kQualidade, Qualidade);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Empurra a distância de sombra para o asset URP ativo. No URP o
+        /// <c>QualitySettings.shadowDistance</c> é ignorado, então sem isto o ajuste de qualidade
+        /// não afeta a sombra. Se o pipeline não for URP (Built-in), nada acontece.
+        /// </summary>
+        private static void AplicarSombraUrp(float distancia)
+        {
+            var asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (asset != null) asset.shadowDistance = distancia;
         }
 
         private void Awake()
