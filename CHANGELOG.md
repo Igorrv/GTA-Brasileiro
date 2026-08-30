@@ -22,6 +22,8 @@ Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/)
 - Notificações no HUD: diária concluída, lote renovado e bônus do lote completo
 - Save v3: lote do dia, concluídas e diária em andamento (com o passo) persistidos;
   saves antigos (v1/v2) abrem normalmente e sorteiam o lote do dia
+- `DiariasTests` — 12 testes NUnit do `DailyMissionService` na rede EditMode (sorteio, determinismo,
+  recompensas, virada de dia, save)
 - **Núcleo de regras sem engine** — `Caos.Core`, `Caos.Data`, `Caos.World` e `Caos.Gameplay` passam a
   compilar sem `UnityEngine` (`noEngineReferences: true`)
 - `Caos.Core`: `CaosLog` (log com destino plugável e piso de severidade), `CaosMath` (as funções de
