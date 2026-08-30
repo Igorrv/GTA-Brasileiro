@@ -19,6 +19,7 @@ REQUIRED_CATALOGS = (
     "shops.json",
     "vehicles.json",
 )
+_LOAD_FAILED = object()
 
 
 class DuplicateJsonKeyError(ValueError):
@@ -49,13 +50,13 @@ def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, An
     return result
 
 
-def _load_json(path: Path, problems: list[Problem]) -> Any | None:
+def _load_json(path: Path, problems: list[Problem]) -> Any:
     try:
         with path.open(encoding="utf-8") as stream:
             return json.load(stream, object_pairs_hook=_object_without_duplicate_keys)
     except (OSError, UnicodeError, json.JSONDecodeError, DuplicateJsonKeyError) as error:
         problems.append(Problem(path, "", f"JSON inválido: {error}"))
-        return None
+        return _LOAD_FAILED
 
 
 def _items_from(
@@ -404,7 +405,7 @@ def validate_catalogs(data_dir: Path) -> tuple[list[Problem], int, int]:
     catalogs: dict[str, dict[str, Any]] = {}
     for path in paths:
         root = _load_json(path, problems)
-        if root is None:
+        if root is _LOAD_FAILED:
             continue
         if not isinstance(root, dict):
             problems.append(Problem(path, "", "a raiz do catálogo deve ser um objeto"))

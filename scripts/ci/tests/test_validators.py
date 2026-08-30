@@ -108,6 +108,19 @@ class CatalogValidatorTests(unittest.TestCase):
 
         self.assertTrue(any("chave JSON repetida" in problem.message for problem in problems))
 
+    def test_rejects_non_object_catalog_root(self) -> None:
+        (self.data_dir / "events.json").write_text("null\n", encoding="utf-8")
+
+        problems, _, _ = validate_catalogs.validate_catalogs(self.data_dir)
+
+        self.assertTrue(
+            any(
+                problem.path.name == "events.json"
+                and "raiz do catálogo deve ser um objeto" in problem.message
+                for problem in problems
+            )
+        )
+
 
 class AsmdefValidatorTests(unittest.TestCase):
     def setUp(self) -> None:
