@@ -28,6 +28,7 @@ Este é o **Game Design Document completo**, em **Português (PT-BR)**, com prof
 | **11** | [Monetização](11-monetizacao.md) | F2P ético, cosméticos, skins, passe de temporada, anúncios opt-in, CaosCash |
 | **12** | [Tecnologia & Implementação](12-tecnologia-implementacao.md) | Unity: arquitetura, dados, física, tráfego DOTS, IA (NPCs/polícia/facções), eventos, otimização mobile |
 | **13** | [MVP & Roadmap](13-mvp-roadmap.md) | Escopo do MVP (vertical slice) + **roadmap de 3 meses** (12 semanas) |
+| **14** | [Customização de Personagem](14-customizacao-personagem.md) | Nota técnica da tela T02 implementada: gênero, pele, cabelo e roupas 100% procedurais |
 
 ---
 
