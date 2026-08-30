@@ -1,0 +1,69 @@
+{
+  "generos": [
+    { "id": "masculino",   "nome": "Masculino" },
+    { "id": "feminino",    "nome": "Feminino" },
+    { "id": "nao_binario", "nome": "Não-binário" }
+  ],
+  "tonsDePele": [
+    { "id": "pele_1", "nome": "Tom 1 (claro)",  "corHex": "#F2D2B6" },
+    { "id": "pele_2", "nome": "Tom 2",          "corHex": "#E8BF9C" },
+    { "id": "pele_3", "nome": "Tom 3",          "corHex": "#D9A877" },
+    { "id": "pele_4", "nome": "Tom 4",          "corHex": "#C78E5B" },
+    { "id": "pele_5", "nome": "Tom 5 (moreno)", "corHex": "#9E7354" },
+    { "id": "pele_6", "nome": "Tom 6",          "corHex": "#7E5638" },
+    { "id": "pele_7", "nome": "Tom 7",          "corHex": "#5F3E28" },
+    { "id": "pele_8", "nome": "Tom 8 (escuro)", "corHex": "#452C1C" }
+  ],
+  "cabelos": [
+    { "id": "raspado",     "nome": "Raspado",        "estilo": "raspado" },
+    { "id": "curto",       "nome": "Curto de Sempre","estilo": "curto" },
+    { "id": "black_power", "nome": "Black Power",    "estilo": "blackpower" },
+    { "id": "moicano",     "nome": "Moicano",        "estilo": "moicano" },
+    { "id": "longo",       "nome": "Longo",          "estilo": "longo" },
+    { "id": "coque",       "nome": "Coque",          "estilo": "coque" }
+  ],
+  "coresCabelo": [
+    { "id": "preto",    "nome": "Preto",    "corHex": "#1A1412" },
+    { "id": "castanho", "nome": "Castanho", "corHex": "#4A2E1A" },
+    { "id": "loiro",    "nome": "Loiro",    "corHex": "#C9A24B" },
+    { "id": "ruivo",    "nome": "Ruivo",    "corHex": "#8A3B1E" },
+    { "id": "grisalho", "nome": "Grisalho", "corHex": "#9A958C" },
+    { "id": "azul_caos","nome": "Azul do Caos (fantasia)", "corHex": "#2E5FA8" }
+  ],
+  "tops": [
+    { "id": "camiseta_amarelinha", "nome": "Camiseta Amarelinha",      "estilo": "camiseta", "corHex": "#F2D12E" },
+    { "id": "camiseta_helenico",   "nome": "Camisa do Helênico FC",    "estilo": "camiseta", "corHex": "#D6222A" },
+    { "id": "regata_branca",       "nome": "Regata Branca",            "estilo": "regata",   "corHex": "#EDEDE8" },
+    { "id": "regata_preta",        "nome": "Regata Preta",             "estilo": "regata",   "corHex": "#232326" },
+    { "id": "camisa_linho",        "nome": "Camisa de Linho",          "estilo": "camisa",   "corHex": "#F5F2E8" },
+    { "id": "jaqueta_couro",       "nome": "Jaqueta de Couro",         "estilo": "jaqueta",  "corHex": "#3A2A22" },
+    { "id": "uniforme_motoboy",    "nome": "Uniforme de Motoboy",      "estilo": "jaqueta",  "corHex": "#E8841E" },
+    { "id": "moletom_caos",        "nome": "Moletom do Caos",          "estilo": "jaqueta",  "corHex": "#2E4A8A" },
+    { "id": "vestido_floral",      "nome": "Vestido Floral",           "estilo": "vestido",  "corHex": "#D96A8B" }
+  ],
+  "bottoms": [
+    { "id": "calca_jeans",     "nome": "Calça Jeans",        "estilo": "calca",   "corHex": "#2A4D9E" },
+    { "id": "calca_moletom",   "nome": "Calça de Moletom",   "estilo": "calca",   "corHex": "#7A7A80" },
+    { "id": "calca_sarja",     "nome": "Calça de Sarja",     "estilo": "calca",   "corHex": "#B9A88F" },
+    { "id": "bermuda_cargo",   "nome": "Bermuda Cargo",      "estilo": "bermuda", "corHex": "#6B6A4E" },
+    { "id": "bermuda_helenico","nome": "Bermuda do Helênico","estilo": "bermuda", "corHex": "#D6222A" },
+    { "id": "short_praia",     "nome": "Short de Praia",     "estilo": "bermuda", "corHex": "#3FA7C4" },
+    { "id": "saia_jeans",      "nome": "Saia Jeans",         "estilo": "saia",    "corHex": "#3E5F9E" },
+    { "id": "saia_floral",     "nome": "Saia Floral",        "estilo": "saia",    "corHex": "#D96A8B" }
+  ],
+  "calcados": [
+    { "id": "tenis_branco", "nome": "Tênis Branco",   "estilo": "tenis",   "corHex": "#E8E8E8" },
+    { "id": "tenis_preto",  "nome": "Tênis Preto",    "estilo": "tenis",   "corHex": "#232326" },
+    { "id": "chinelo",      "nome": "Chinelo de Dedo","estilo": "chinelo", "corHex": "#2A4D9E" },
+    { "id": "sandalia",     "nome": "Sandália",       "estilo": "chinelo", "corHex": "#8A6A4A" },
+    { "id": "bota_couro",   "nome": "Bota de Couro",  "estilo": "bota",    "corHex": "#4A3222" }
+  ],
+  "chapeus": [
+    { "id": "nenhum",         "nome": "Cabeça Livre",      "estilo": "nenhum",  "corHex": "#000000" },
+    { "id": "bone_verde",     "nome": "Boné Aba Reta",     "estilo": "bone",    "corHex": "#267347" },
+    { "id": "bone_sindicato", "nome": "Boné do Sindicato", "estilo": "bone",    "corHex": "#2A4D8A" },
+    { "id": "bone_helenico",  "nome": "Boné do Helênico",  "estilo": "bone",    "corHex": "#D6222A" },
+    { "id": "chapeu_palha",   "nome": "Chapéu de Palha",   "estilo": "chapeu",  "corHex": "#D9C27A" },
+    { "id": "bandana",        "nome": "Bandana",           "estilo": "bandana", "corHex": "#B03030" }
+  ]
+}
