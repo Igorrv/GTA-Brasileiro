@@ -1,16 +1,19 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master]
   pull_request:
+  push:
+    branches:
+      - main
+      - master
+  merge_group:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -40,3 +43,51 @@ jobs:
         run: python3 tools/testes-sem-unity/gerar_projetos.py
       - name: Compilar e rodar os testes
         run: dotnet test tools/testes-sem-unity/gerado/Caos.Testes/Caos.Testes.csproj --logger "console;verbosity=normal"
+
+  validator-tests:
+    name: Testes dos validadores
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Executar testes unitários
+        run: python -m unittest discover -s scripts/ci/tests -v
+
+  catalogs:
+    name: Catálogos JSON
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validar sintaxe e integridade referencial
+        run: python scripts/ci/validate_catalogs.py
+
+  asmdefs:
+    name: Grafo de assemblies
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validar asmdefs e rejeitar ciclos
+        run: python scripts/ci/validate_asmdefs.py
+
+  markdown-links:
+    name: Links internos da documentação
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validar destinos locais em Markdown
+        run: python scripts/ci/check_markdown_links.py

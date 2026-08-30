@@ -1,0 +1,8 @@
+# Proprietário padrão do repositório.
+* @Igorrv
+
+# Áreas que alteram automação, contratos de dados ou limites entre assemblies.
+/.github/ @Igorrv
+/scripts/ci/ @Igorrv
+/Assets/StreamingAssets/Data/ @Igorrv
+/Assets/Scripts/ @Igorrv

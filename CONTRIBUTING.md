@@ -54,6 +54,22 @@ chore: atualizar .gitignore de logs locais
 - Atualize GDD/README se mudar comportamento visível ao jogador.
 - Use o template em `.github/PULL_REQUEST_TEMPLATE.md`.
 
+## Validação sem Unity
+
+O workflow `CI` roda em todo pull request, merge queue e push para `main`/`master`. Ele não
+precisa de licença do Unity nem de dependências Python externas.
+
+```bash
+python3 -m unittest discover -s scripts/ci/tests -v
+python3 scripts/ci/validate_catalogs.py
+python3 scripts/ci/validate_asmdefs.py
+python3 scripts/ci/check_markdown_links.py
+```
+
+Os checks bloqueiam catálogos JSON inválidos, referências quebradas, ciclos entre missões ou
+asmdefs e links locais inexistentes. Links externos não são consultados, evitando falhas por
+indisponibilidade de terceiros.
+
 ## Validação rápida
 
 - Compila no Editor sem erros.
