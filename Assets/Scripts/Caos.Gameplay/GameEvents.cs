@@ -10,6 +10,10 @@ namespace Caos.Gameplay
     public struct EventoDisparado  : IGameEvent { public string id; public string nome; public string opcao; public AttributeImpact impacto; }
     public struct MissaoAceita     : IGameEvent { public string id; }
     public struct MissaoConcluida  : IGameEvent { public string id; public float rs; public float xp; }
+    public struct DiariaAceita     : IGameEvent { public string id; }
+    public struct DiariaConcluida  : IGameEvent { public string id; public float rs; public float xp; }
+    public struct DiariasRenovadas : IGameEvent { public int dia; public int quantidade; }
+    public struct DiariasCompletas : IGameEvent { public float xpBonus; }  // as 5 do dia feitas
     public struct SanidadeBaixa    : IGameEvent { public float valor; }  // quando sanidade <= 15
     public struct PlayerMorreu     : IGameEvent { }
 }

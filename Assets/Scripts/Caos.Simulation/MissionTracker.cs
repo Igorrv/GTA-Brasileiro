@@ -27,6 +27,7 @@ namespace Caos.Simulation
 
         private MissionService _missions;
         private GameCatalogs   _catalogs;
+        private DailyMissionService _dailies;
 
         private string     _activeId;
         private MissionDto _active;
@@ -35,12 +36,21 @@ namespace Caos.Simulation
         private Vector3    _dest;
         private string     _destLabel = "";
 
+        // ---- modo diária (docs/07 §7.5): a diária rastreada toma o beacon/GPS/painel emprestados;
+        // a campanha em andamento espera e volta de onde parou quando a diária termina ----
+        private DailyDto _dailyAtiva;
+        private int      _passoCampanha;        // passo da campanha congelado enquanto a diária roda
+
         /// <summary>Destino atual no mundo (o minimapa desenha o blip dourado aqui).</summary>
         public Vector3 Destino      => _isVehicleMission && _vehicleT != null ? _vehicleT.position : _dest;
-        public bool    TemDestino   => _active != null;
+        public bool    TemDestino   => _active != null || _dailyAtiva != null;
         /// <summary>Título da missão ativa e nome do destino — usados pelo celular (app VaiJá).</summary>
-        public string  TituloAtivo  => _active != null ? _active.titulo : "";
+        public string  TituloAtivo  => _dailyAtiva != null ? _dailyAtiva.titulo : (_active != null ? _active.titulo : "");
         public string  DestinoLabel => _isVehicleMission ? "o veículo" : _destLabel;
+
+        /// <summary>Verdadeiro enquanto uma diária está sendo rastreada no lugar da campanha.</summary>
+        public bool   EmDiaria      => _dailyAtiva != null;
+        public string DiariaAtivaId => _dailyAtiva != null ? _dailyAtiva.id : null;
 
         // UI
         private float _refreshAccum;
@@ -69,11 +79,32 @@ namespace Caos.Simulation
         {
             ServiceLocator.TryGet(out _missions);
             ServiceLocator.TryGet(out _catalogs);
+            ServiceLocator.TryGet(out _dailies);
+
+            // save carregado no meio de uma diária: retoma ela (no passo salvo) antes da campanha
+            if (_dailies != null && !string.IsNullOrEmpty(_dailies.AtivaId) &&
+                _catalogs != null && _catalogs.DailyById.TryGetValue(_dailies.AtivaId, out var dd))
+            {
+                _dailyAtiva = dd;
+                _passo = Mathf.Clamp(_dailies.PassoAtiva, 0, Mathf.Max(0, (dd.objetivos != null ? dd.objetivos.Count : 1) - 1));
+                PrepararPasso();
+                RefreshPanel();
+                Debug.Log("[Diárias] Retomada do save: " + dd.titulo + " — passo " + PassoAtual + "/" + TotalPassos);
+                return;
+            }
             AcceptNext();
         }
 
-        private void OnEnable()  => EventBus<MissaoConcluida>.Subscribe(OnConcluida);
-        private void OnDisable() => EventBus<MissaoConcluida>.Unsubscribe(OnConcluida);
+        private void OnEnable()
+        {
+            EventBus<MissaoConcluida>.Subscribe(OnConcluida);
+            EventBus<DiariaConcluida>.Subscribe(OnDiariaConcluida);
+        }
+        private void OnDisable()
+        {
+            EventBus<MissaoConcluida>.Unsubscribe(OnConcluida);
+            EventBus<DiariaConcluida>.Unsubscribe(OnDiariaConcluida);
+        }
 
         private void OnConcluida(MissaoConcluida e)
         {
@@ -82,10 +113,68 @@ namespace Caos.Simulation
             AcceptNext();
         }
 
+        private void OnDiariaConcluida(DiariaConcluida e)
+        {
+            _audio?.Chime();
+            if (_dailyAtiva != null && e.id == _dailyAtiva.id)
+            {
+                _dailyAtiva = null;
+                RetomarCampanha();
+            }
+        }
+
+        // -------------------------------------------------------- modo diária (chamado pelo celular)
+        /// <summary>
+        /// Passa a rastrear a diária <paramref name="id"/>: a campanha em andamento congela no passo
+        /// atual e o beacon/GPS/painel passam a apontar os objetivos da diária. Ao concluir (ou
+        /// desistir), a campanha volta exatamente de onde parou.
+        /// </summary>
+        public bool RastrearDiaria(string id)
+        {
+            if (_dailies == null || _catalogs == null) return false;
+            if (_dailyAtiva != null && _dailyAtiva.id == id) return true;   // já é a rastreada
+            if (!_catalogs.DailyById.TryGetValue(id, out var dd)) return false;
+
+            // troca de diária: larga a atual primeiro (ela volta a ficar disponível no lote de hoje)
+            if (_dailyAtiva != null) { _dailies.Abandonar(); _dailyAtiva = null; }
+            if (!_dailies.Accept(id)) { RetomarCampanha(); return false; }
+
+            if (_active != null) _passoCampanha = _passo;   // congela a campanha onde está
+            _dailyAtiva = dd;
+            _passo = 0;
+            PrepararPasso();
+            RefreshPanel();
+            Debug.Log("[Diárias] Rastreando: " + dd.titulo + " — " + VerboDoPasso() + " " + _destLabel);
+            return true;
+        }
+
+        /// <summary>Desiste da diária rastreada (ela volta a ficar disponível no app hoje).</summary>
+        public void LargarDiaria()
+        {
+            if (_dailyAtiva == null) return;
+            Debug.Log("[Diárias] Desistiu de: " + _dailyAtiva.titulo);
+            _dailies?.Abandonar();
+            _dailyAtiva = null;
+            RetomarCampanha();
+        }
+
+        /// <summary>Diária encerrada: a campanha volta do passo em que congelou (ou pega a próxima).</summary>
+        private void RetomarCampanha()
+        {
+            if (_active != null)
+            {
+                _passo = _passoCampanha;
+                PrepararPasso();
+                RefreshPanel();
+            }
+            else AcceptNext();
+        }
+
         // -------------------------------------------------------- cadeia
         private void AcceptNext()
         {
             if (_missions == null || _catalogs == null) { ShowEmpty(); return; }
+            if (_dailyAtiva != null) return;   // enquanto a diária roda, a campanha espera
 
             // percorre a LISTA (ordem do JSON) e não o dicionário: a cadeia da campanha tem que
             // seguir M01, M02, M03... e Dictionary não garante ordem.
@@ -132,13 +221,22 @@ namespace Caos.Simulation
             PrepararPasso();
         }
 
+        /// <summary>Objetivos da missão em curso — da diária rastreada, se houver, senão da campanha.</summary>
+        private System.Collections.Generic.List<MissionObjectiveDto> ObjetivosCorrentes =>
+            _dailyAtiva != null ? _dailyAtiva.objetivos : (_active != null ? _active.objetivos : null);
+
         /// <summary>Objetivo do passo atual (nulo se a missão não tem objetivos).</summary>
-        private MissionObjectiveDto ObjetivoAtual =>
-            _active != null && _active.objetivos != null && _passo < _active.objetivos.Count
-                ? _active.objetivos[_passo] : null;
+        private MissionObjectiveDto ObjetivoAtual
+        {
+            get
+            {
+                var objs = ObjetivosCorrentes;
+                return objs != null && _passo < objs.Count ? objs[_passo] : null;
+            }
+        }
 
         public int  PassoAtual  => _passo + 1;
-        public int  TotalPassos => _active != null && _active.objetivos != null ? Mathf.Max(1, _active.objetivos.Count) : 1;
+        public int  TotalPassos => ObjetivosCorrentes != null ? Mathf.Max(1, ObjetivosCorrentes.Count) : 1;
 
         private void PrepararPasso()
         {
@@ -212,7 +310,7 @@ namespace Caos.Simulation
 
         private void Update()
         {
-            if (_active == null || _missions == null)
+            if (!TemDestino || (_dailyAtiva == null && _missions == null))
             {
                 if (_beacon != null) _beacon.SetActive(false);
                 return;
@@ -242,23 +340,34 @@ namespace Caos.Simulation
 
             // passo cumprido: avança. Só o ÚLTIMO conclui a missão — os do meio dão o chime curto
             // e mandam o jogador para o próximo destino (o GPS recalcula sozinho).
-            int total = _active.objetivos != null ? _active.objetivos.Count : 0;
+            string titulo = _dailyAtiva != null ? _dailyAtiva.titulo : _active.titulo;
+            int total = ObjetivosCorrentes != null ? ObjetivosCorrentes.Count : 0;
             if (_passo + 1 < total)
             {
                 _passo++;
                 PrepararPasso();
                 RefreshPanel();
                 _audio?.Chime();
-                Debug.Log($"[Missão] Passo {_passo}/{total} de '{_active.titulo}' — agora: {VerboDoPasso()} {_destLabel}.");
+                if (_dailyAtiva != null) _dailies?.AnotarPasso(_passo);   // o save retoma a diária no passo certo
+                Debug.Log($"[Missão] Passo {_passo}/{total} de '{titulo}' — agora: {VerboDoPasso()} {_destLabel}.");
                 return;
             }
 
-            _missions.Complete(_activeId);   // OnConcluida cuida do chime + próxima missão
+            if (_dailyAtiva != null) _dailies?.Complete(_dailyAtiva.id);   // OnDiariaConcluida retoma a campanha
+            else _missions.Complete(_activeId);                            // OnConcluida cuida do chime + próxima
         }
 
         // -------------------------------------------------------- UI
         private void RefreshPanel()
         {
+            if (_dailyAtiva != null)
+            {
+                if (_titleText  != null) _titleText.text  = $"DIÁRIA · {_dailyAtiva.titulo}   ({PassoAtual}/{TotalPassos})";
+                if (_objText    != null) _objText.text    = Orientacao();
+                if (_rewardText != null) _rewardText.text = "R$ " + _dailyAtiva.recompensaRs.ToString("F0") + "   ·   " + _dailyAtiva.recompensaXp.ToString("F0") + " XP";
+                if (_beaconLabel != null) _beaconLabel.text = _isVehicleMission ? "VEICULO" : _destLabel.ToUpper();
+                return;
+            }
             if (_active == null) { ShowEmpty(); return; }
             if (_titleText  != null) _titleText.text  = $"{_active.titulo}   ({PassoAtual}/{TotalPassos})";
             if (_objText    != null) _objText.text    = Orientacao();
@@ -272,7 +381,7 @@ namespace Caos.Simulation
         /// </summary>
         private string Orientacao()
         {
-            if (_active == null) return "";
+            if (!TemDestino) return "";
             if (_isVehicleMission) return "Entre no veículo  ·  [E]";
 
             float dist = _player != null ? Vector3.Distance(_player.position, _dest) : 0f;
@@ -295,7 +404,7 @@ namespace Caos.Simulation
         private void ShowNone()
         {
             if (_titleText  != null) _titleText.text  = "Sem missoes disponiveis";
-            if (_objText    != null) _objText.text    = "Volte mais tarde";
+            if (_objText    != null) _objText.text    = "Olhe as diarias no celular [P]";
             if (_rewardText != null) _rewardText.text = "";
             if (_beacon != null) _beacon.SetActive(false);
         }

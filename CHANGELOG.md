@@ -7,6 +7,23 @@ Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/)
 
 ### Added
 
+- **Missões diárias (S9, docs/07 §7.5):** catálogo `dailies.json` com 10 tarefas (D01–D10) —
+  entregas VaiJá, corre do Motoclube, carga de caminhoneiro, tour fotográfico, bicos de
+  pedreiro/garçom, panfletagem e olheiro — com recompensa em R$, XP, reputação de facção
+  e bônus de atributo (Sanidade)
+- `DailyMissionService`: sorteia 5 diárias por dia de jogo, determinístico por dia+semente
+  do mundo (todo mundo do mesmo mundo vê o mesmo lote); virada de dia renova o lote;
+  quem começou uma diária termina mesmo depois da virada; fechar as 5 paga bônus de XP
+- App **Diárias** no celular: lista as 5 do dia com estado (disponível/NO AR/FEITA),
+  recompensa e botão Rastrear/Desistir
+- `MissionTracker` em modo diária: beacon, linha do GPS no minimapa e painel de missão
+  passam a apontar os passos da diária; a campanha congela no passo atual e volta de
+  onde parou ao concluir ou desistir
+- Notificações no HUD: diária concluída, lote renovado e bônus do lote completo
+- Save v3: lote do dia, concluídas e diária em andamento (com o passo) persistidos;
+  saves antigos (v1/v2) abrem normalmente e sorteiam o lote do dia
+- `DiariasTests` — 12 testes NUnit do `DailyMissionService` na rede EditMode (sorteio, determinismo,
+  recompensas, virada de dia, save)
 - **Núcleo de regras sem engine** — `Caos.Core`, `Caos.Data`, `Caos.World` e `Caos.Gameplay` passam a
   compilar sem `UnityEngine` (`noEngineReferences: true`)
 - `Caos.Core`: `CaosLog` (log com destino plugável e piso de severidade), `CaosMath` (as funções de

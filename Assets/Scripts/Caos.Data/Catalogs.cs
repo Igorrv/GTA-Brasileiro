@@ -17,6 +17,7 @@ namespace Caos.Data
         public readonly List<ItemDto>     Items     = new List<ItemDto>();
         public readonly List<EventDto>    Events    = new List<EventDto>();
         public readonly List<MissionDto>  Missions  = new List<MissionDto>();
+        public readonly List<DailyDto>    Dailies   = new List<DailyDto>();
         public readonly List<ShopDto>     Shops     = new List<ShopDto>();
         public readonly List<RadioStationDto> Radio = new List<RadioStationDto>();
         public readonly List<WorldDto>    Worlds    = new List<WorldDto>();
@@ -26,6 +27,7 @@ namespace Caos.Data
         public readonly Dictionary<string, ItemDto>     ItemById     = new Dictionary<string, ItemDto>();
         public readonly Dictionary<string, EventDto>    EventById    = new Dictionary<string, EventDto>();
         public readonly Dictionary<string, MissionDto>  MissionById  = new Dictionary<string, MissionDto>();
+        public readonly Dictionary<string, DailyDto>    DailyById    = new Dictionary<string, DailyDto>();
         public readonly Dictionary<string, DistrictDto> DistrictById = new Dictionary<string, DistrictDto>();
         public readonly Dictionary<string, ShopDto>     ShopById     = new Dictionary<string, ShopDto>();
 
@@ -35,6 +37,7 @@ namespace Caos.Data
             Index(Items, ItemById);
             Index(Events, EventById);
             Index(Missions, MissionById);
+            Index(Dailies, DailyById);
             Index(Districts, DistrictById);
             Index(Shops, ShopById);
         }
@@ -63,6 +66,21 @@ namespace Caos.Data
                 id = "M01", tipo = "Principal", titulo = "Chegada de Van", dador = "tonho_van",
                 recompensaRs = 0f, recompensaXp = 50f, faccao = "", preRequisitos = new List<string>(),
                 objetivos = new List<MissionObjectiveDto> { new MissionObjectiveDto { tipo = "ir", alvo = "van_tonho", quantidade = 1, local = "Centro" } }
+            });
+            // diárias mínimas no Centro, para o app nunca abrir vazio mesmo sem o JSON
+            c.Dailies.Add(new DailyDto
+            {
+                id = "D01", titulo = "Rota da Manhã", dador = "app_vaija",
+                descricao = "Entrega rápida do VaiJá pelo Centro.",
+                recompensaRs = 120f, recompensaXp = 80f, recompensaRep = new List<RepDelta>(),
+                objetivos = new List<MissionObjectiveDto> { new MissionObjectiveDto { tipo = "levar", alvo = "encomenda", quantidade = 1, local = "Centro" } }
+            });
+            c.Dailies.Add(new DailyDto
+            {
+                id = "D02", titulo = "Volta no Calçadão", dador = "bia",
+                descricao = "Passa no calçadão e confere o movimento.",
+                recompensaRs = 60f, recompensaXp = 40f, recompensaRep = new List<RepDelta>(),
+                objetivos = new List<MissionObjectiveDto> { new MissionObjectiveDto { tipo = "ir", alvo = "calcadao", quantidade = 1, local = "Centro" } }
             });
             c.IndexAll();
             return c;

@@ -1,0 +1,110 @@
+{
+  "items": [
+    {
+      "id": "D01", "titulo": "Rota da Manhã", "dador": "app_vaija",
+      "descricao": "Sequência de entregas do VaiJá pra começar o dia com o bolso quente.",
+      "recompensaRs": 200, "recompensaXp": 130,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "vaija_hub", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar",   "alvo": "encomenda", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "encomenda", "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "D02", "titulo": "Motoboy Relâmpago", "dador": "app_vaija",
+      "descricao": "Pedido quente de padaria e boteco. Entrega nas duas pontas da cidade.",
+      "recompensaRs": 180, "recompensaXp": 120,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "padaria_pao",  "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar",   "alvo": "pedido",       "quantidade": 1, "local": "Belvedere" },
+        { "tipo": "coletar", "alvo": "boteco_varzea","quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "pedido",       "quantidade": 1, "local": "Marginal" }
+      ]
+    },
+    {
+      "id": "D03", "titulo": "Faxina de Eventos", "dador": "dona_cida",
+      "descricao": "Dar uma mão em dois pontos de evento da cidade. Faz bem pra cabeça.",
+      "recompensaRs": 120, "recompensaXp": 80,
+      "recompensaRep": [],
+      "bonus": { "fome": 0, "sede": 0, "energia": 0, "sanidade": 4, "saude": 0, "rs": 0, "caosCash": 0, "caos": 0, "stars": 0 },
+      "objetivos": [
+        { "tipo": "ir", "alvo": "praca_matriz",  "quantidade": 1, "local": "Centro" },
+        { "tipo": "ir", "alvo": "feira_ajudante","quantidade": 1, "local": "Rodoviaria" }
+      ]
+    },
+    {
+      "id": "D04", "titulo": "Corre do Motoclube", "dador": "tavinho",
+      "descricao": "O Tavinho precisa de um pacote na mão dele sem a polícia no encalço.",
+      "recompensaRs": 250, "recompensaXp": 150,
+      "recompensaRep": [ { "alvo": "Motoclube", "delta": 6 } ],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "boteco_varzea", "quantidade": 1, "local": "Cohab" },
+        { "tipo": "levar",   "alvo": "pacote",        "quantidade": 1, "local": "Centro" }
+      ]
+    },
+    {
+      "id": "D05", "titulo": "Tour Fotográfico", "dador": "bia",
+      "descricao": "A Bia quer cliques de três cartões-postais: praça, orla e o mirante do morro.",
+      "recompensaRs": 100, "recompensaXp": 90,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "ir", "alvo": "praca_matriz", "quantidade": 1, "local": "Centro" },
+        { "tipo": "ir", "alvo": "orla",         "quantidade": 1, "local": "Itauna" },
+        { "tipo": "ir", "alvo": "mirante",      "quantidade": 1, "local": "VistaAlegre" }
+      ]
+    },
+    {
+      "id": "D06", "titulo": "Carga do Caminhoneiro", "dador": "seu_otacilio",
+      "descricao": "Uma entrega longa pro Seu Otacílio: sai do galpão e cruza a cidade.",
+      "recompensaRs": 220, "recompensaXp": 140,
+      "recompensaRep": [ { "alvo": "Caminhoneiros", "delta": 6 } ],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "galpao_carga", "quantidade": 1, "local": "MonteVerde" },
+        { "tipo": "levar",   "alvo": "carga",        "quantidade": 1, "local": "SitioCapim" }
+      ]
+    },
+    {
+      "id": "D07", "titulo": "Bico de Pedreiro", "dador": "mestre_jair",
+      "descricao": "A obra do Edifício Solar tá sem material. Busca no galpão e entrega no canteiro.",
+      "recompensaRs": 150, "recompensaXp": 100,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "galpao_carga", "quantidade": 1, "local": "MonteVerde" },
+        { "tipo": "levar",   "alvo": "obra_predio",  "quantidade": 1, "local": "Belvedere" }
+      ]
+    },
+    {
+      "id": "D08", "titulo": "Bico de Garçom", "dador": "nego_veio",
+      "descricao": "O quiosque da orla tá lotado. Busca o pedido no trailer e serve na praia.",
+      "recompensaRs": 90, "recompensaXp": 70,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "coletar", "alvo": "trailer_xtudo", "quantidade": 1, "local": "Marginal" },
+        { "tipo": "levar",   "alvo": "quiosque_job",  "quantidade": 1, "local": "Itauna" }
+      ]
+    },
+    {
+      "id": "D09", "titulo": "Campanha Política", "dador": "comite_frente",
+      "descricao": "Panfletagem da Frente Popular em três pontos movimentados da cidade.",
+      "recompensaRs": 100, "recompensaXp": 80,
+      "recompensaRep": [ { "alvo": "FrentePopular", "delta": 6 } ],
+      "objetivos": [
+        { "tipo": "ir", "alvo": "camelo_centro",  "quantidade": 1, "local": "Centro" },
+        { "tipo": "ir", "alvo": "campinho",       "quantidade": 1, "local": "Cohab" },
+        { "tipo": "ir", "alvo": "feira_ajudante", "quantidade": 1, "local": "Rodoviaria" }
+      ]
+    },
+    {
+      "id": "D10", "titulo": "Olheiro do Bira", "dador": "delegado_bira",
+      "descricao": "O Delegado Bira quer um recado levado sem alarde. Só ida e volta.",
+      "recompensaRs": 140, "recompensaXp": 100,
+      "recompensaRep": [],
+      "objetivos": [
+        { "tipo": "falar", "alvo": "loterica_sorte", "quantidade": 1, "local": "Centro" },
+        { "tipo": "levar", "alvo": "recado",         "quantidade": 1, "local": "Rodoviaria" }
+      ]
+    }
+  ]
+}
