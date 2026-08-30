@@ -27,8 +27,14 @@ namespace Caos.Save
         // Missions
         public List<string> missionsCompleted;
         public List<string> missionsActive;
+        // Diárias (docs/07 §7.5): lote do dia, feitas e a em andamento (com o passo)
+        public int dDay;
+        public List<string> dDrawn;
+        public List<string> dDone;
+        public string dActive;
+        public int dPasso;
 
-        public int saveVersion = 2;   // 2 = inclui Sede
+        public int saveVersion = 3;   // 2 = inclui Sede · 3 = inclui diárias
         public string savedAt = "";
     }
 

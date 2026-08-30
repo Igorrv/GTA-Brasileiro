@@ -27,6 +27,7 @@ namespace Caos.Bootstrap
         public WorldStateService World      { get; private set; }
         public TimeOfDayService  Time       { get; private set; }
         public MissionService    Missions   { get; private set; }
+        public DailyMissionService Dailies  { get; private set; }
         public ImpactResolver    Impact     { get; private set; }
         public EventSystem       Events     { get; private set; }
         public GameCatalogs      Catalogs   { get; private set; }
@@ -86,6 +87,7 @@ namespace Caos.Bootstrap
             Impact   = new ImpactResolver(Attributes, Economy, Reputation, World);
             Events   = new EventSystem(World, Time, Catalogs, Impact);
             Missions = new MissionService(Catalogs, Economy);
+            Dailies  = new DailyMissionService(Catalogs, Economy, Experience, Reputation, Impact, Time);
 
             // 5) espera o menu inicial dizer em qual slot vamos jogar
             CaosLog.Info("[GameManager] Aguardando escolha de slot no menu inicial...");
@@ -96,7 +98,7 @@ namespace Caos.Bootstrap
             var save = GameSession.NovoJogo ? null : SaveSystem.Load(GameSession.Slot);
             if (save != null)
             {
-                SaveSystem.Apply(save, Attributes, Economy, Reputation, World, Time, Missions, Experience);
+                SaveSystem.Apply(save, Attributes, Economy, Reputation, World, Time, Missions, Experience, Dailies);
                 CaosLog.Info($"[GameManager] Slot {GameSession.Slot}: save restaurado.");
             }
             else
@@ -131,14 +133,14 @@ namespace Caos.Bootstrap
             if (_autosaveAccum >= kAutosaveInterval)
             {
                 _autosaveAccum = 0f;
-                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience);
+                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience, Dailies);
             }
         }
 
         private void OnApplicationPause(bool paused)
         {
             if (paused && Ready)
-                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience);
+                SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience, Dailies);
         }
 
         private void CreditarXpDaMissao(MissaoConcluida e)
@@ -171,6 +173,7 @@ namespace Caos.Bootstrap
             if (Impact != null)     ServiceLocator.Register(Impact);
             if (Events != null)     ServiceLocator.Register(Events);
             if (Missions != null)   ServiceLocator.Register(Missions);
+            if (Dailies != null)    ServiceLocator.Register(Dailies);
         }
 
         private void BuildTickables()
@@ -181,6 +184,7 @@ namespace Caos.Bootstrap
             _tickables.Add(Economy);
             _tickables.Add(Attributes);
             if (Events != null) _tickables.Add(Events);
+            if (Dailies != null) _tickables.Add(Dailies);
             _tickables.Sort((a, b) => a.Order.CompareTo(b.Order));
         }
     }

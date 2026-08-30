@@ -92,6 +92,9 @@ namespace Caos.Simulation
             EventBus<EstrelasMudou>.Subscribe(OnStars);
             EventBus<EventoDisparado>.Subscribe(OnEvento);
             EventBus<MissaoConcluida>.Subscribe(OnMissao);
+            EventBus<DiariaConcluida>.Subscribe(OnDiaria);
+            EventBus<DiariasRenovadas>.Subscribe(OnDiariasRenovadas);
+            EventBus<DiariasCompletas>.Subscribe(OnDiariasCompletas);
             EventBus<XpMudou>.Subscribe(OnXp);
             EventBus<SubiuDeNivel>.Subscribe(OnNivel);
         }
@@ -103,6 +106,9 @@ namespace Caos.Simulation
             EventBus<EstrelasMudou>.Unsubscribe(OnStars);
             EventBus<EventoDisparado>.Unsubscribe(OnEvento);
             EventBus<MissaoConcluida>.Unsubscribe(OnMissao);
+            EventBus<DiariaConcluida>.Unsubscribe(OnDiaria);
+            EventBus<DiariasRenovadas>.Unsubscribe(OnDiariasRenovadas);
+            EventBus<DiariasCompletas>.Unsubscribe(OnDiariasCompletas);
             EventBus<XpMudou>.Unsubscribe(OnXp);
             EventBus<SubiuDeNivel>.Unsubscribe(OnNivel);
         }
@@ -125,6 +131,9 @@ namespace Caos.Simulation
 
         private void OnEvento(EventoDisparado e) => Notificar(e.nome + " — " + e.opcao, new Color(0.75f, 0.85f, 1f));
         private void OnMissao(MissaoConcluida e) => Notificar($"Missão concluída  ·  +R$ {e.rs:F0}", new Color(0.6f, 1f, 0.65f));
+        private void OnDiaria(DiariaConcluida e) => Notificar($"Diária concluída  ·  +R$ {e.rs:F0}", new Color(0.6f, 1f, 0.65f));
+        private void OnDiariasRenovadas(DiariasRenovadas e) => Notificar("Novas diárias no celular  ·  [P]", new Color(0.55f, 0.8f, 1f));
+        private void OnDiariasCompletas(DiariasCompletas e) => Notificar($"Todas as diárias do dia feitas!  ·  +{e.xpBonus:F0} XP bônus", kOuro);
 
         /// <summary>Empurra uma linha no feed de notificações (canto inferior central).</summary>
         public void Notificar(string msg, Color cor)

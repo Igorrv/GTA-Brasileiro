@@ -226,4 +226,23 @@ namespace Caos.Data
         public List<string> preRequisitos; // ids de missões
         public List<MissionObjectiveDto> objetivos;
     }
+
+    /// <summary>
+    /// Missão diária (docs/07 §7.5): sorteada em lote de 5 por dia no celular, repetível a cada
+    /// virada de dia. Reusa os objetivos das missões de campanha; as recompensas extras (reputação
+    /// e bônus de atributo) são opcionais — campos zerados/ausentes não têm efeito.
+    /// </summary>
+    [Serializable]
+    public class DailyDto
+    {
+        public string id;            // ex.: "D01"
+        public string titulo;
+        public string dador;         // NPC/app que oferece
+        public string descricao;     // resumo de uma linha no app Diárias
+        public float  recompensaRs;
+        public float  recompensaXp;
+        public List<RepDelta> recompensaRep;          // opcional — ex.: Motoclube +6
+        public AttributeImpact bonus;                 // opcional — ex.: San +4 (campos 0 = sem efeito)
+        public List<MissionObjectiveDto> objetivos;
+    }
 }

@@ -46,11 +46,13 @@ namespace Caos.Save
 
         // ------------------------------------------------------------------ gravar / ler
         public static void Capture(PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
-            => Capture(SlotAtual, attrs, econ, rep, world, time, missions, xp);
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null,
+            DailyMissionService diarias = null)
+            => Capture(SlotAtual, attrs, econ, rep, world, time, missions, xp, diarias);
 
         public static void Capture(int slot, PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null,
+            DailyMissionService diarias = null)
         {
             var data = new SaveData
             {
@@ -65,6 +67,14 @@ namespace Caos.Save
                 missionsCompleted = missions.CompletedSnapshot(), missionsActive = missions.ActiveSnapshot(),
                 savedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
             };
+            if (diarias != null)
+            {
+                data.dDay = diarias.Dia;
+                data.dDrawn = diarias.DrawnSnapshot();
+                data.dDone = diarias.DoneSnapshot();
+                data.dActive = diarias.AtivaId;
+                data.dPasso = diarias.PassoAtiva;
+            }
             File.WriteAllText(Caminho(slot), JsonUtility.ToJson(data, prettyPrint: true));
             CaosLog.Info($"[Save] Slot {slot} salvo em {Caminho(slot)}.");
         }
@@ -79,7 +89,8 @@ namespace Caos.Save
         }
 
         public static void Apply(SaveData d, PlayerAttributes attrs, EconomyService econ, ReputationService rep,
-            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null)
+            WorldStateService world, TimeOfDayService time, MissionService missions, ExperienceService xp = null,
+            DailyMissionService diarias = null)
         {
             if (d == null) return;
             // saves da versão 1 não têm Sede: entra hidratado em vez de nascer morrendo de sede
@@ -93,6 +104,9 @@ namespace Caos.Save
             rep.Hydrate(FromSave(d.repFaction), FromSave(d.repDistrict));
             missions.Hydrate(d.missionsCompleted, d.missionsActive);
             xp?.Hydrate(d.xXp, d.xNivel <= 0 ? 1 : d.xNivel);
+            // saves da versão < 3 não têm diárias: o serviço sorteia o lote do dia sozinho
+            if (diarias != null && d.saveVersion >= 3)
+                diarias.Hydrate(d.dDay, d.dDrawn, d.dDone, d.dActive, d.dPasso);
             CaosLog.Info("[Save] Estado restaurado.");
         }
 

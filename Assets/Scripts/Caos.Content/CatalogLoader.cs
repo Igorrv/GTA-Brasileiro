@@ -15,6 +15,7 @@ namespace Caos.Content
     [Serializable] class ItemList     { public List<ItemDto>     items; }
     [Serializable] class EventList    { public List<EventDto>    items; }
     [Serializable] class MissionList  { public List<MissionDto>  items; }
+    [Serializable] class DailyList    { public List<DailyDto>    items; }
     [Serializable] class ShopList     { public List<ShopDto>     items; }
     [Serializable] class RadioList    { public List<RadioStationDto> items; }
     [Serializable] class WorldList    { public List<WorldDto>    items; }
@@ -46,13 +47,14 @@ namespace Caos.Content
             yield return Read<ItemList>("items.json",        list => c.Items.AddRange(list.items ?? Empty<ItemDto>()));
             yield return Read<EventList>("events.json",      list => c.Events.AddRange(list.items ?? Empty<EventDto>()));
             yield return Read<MissionList>("missions.json",  list => c.Missions.AddRange(list.items ?? Empty<MissionDto>()));
+            yield return Read<DailyList>("dailies.json",     list => c.Dailies.AddRange(list.items ?? Empty<DailyDto>()));
             yield return Read<ShopList>("shops.json",        list => c.Shops.AddRange(list.items ?? Empty<ShopDto>()));
             yield return Read<RadioList>("radio.json",       list => c.Radio.AddRange(list.items ?? Empty<RadioStationDto>()));
             yield return Read<StreetNamesDto>("streets.json",dto  => c.Streets = dto);
             yield return Read<WorldList>("worlds.json",     list => c.Worlds.AddRange(list.items ?? Empty<WorldDto>()));
 
             c.IndexAll();
-            CaosLog.Info($"[Catalogs] Cfg carregada: {c.Vehicles.Count} veículos, {c.Factions.Count} facções, {c.Districts.Count} bairros, {c.Items.Count} itens, {c.Events.Count} eventos, {c.Missions.Count} missões, {c.Shops.Count} estabelecimentos, {c.Radio.Count} estações de rádio.");
+            CaosLog.Info($"[Catalogs] Cfg carregada: {c.Vehicles.Count} veículos, {c.Factions.Count} facções, {c.Districts.Count} bairros, {c.Items.Count} itens, {c.Events.Count} eventos, {c.Missions.Count} missões, {c.Dailies.Count} diárias, {c.Shops.Count} estabelecimentos, {c.Radio.Count} estações de rádio.");
             onDone?.Invoke(c);
         }
 

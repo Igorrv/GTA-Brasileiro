@@ -39,6 +39,7 @@ namespace Caos.Simulation
         private TimeOfDayService  _time;
         private MissionService    _missoes;
         private ExperienceService _xp;
+        private DailyMissionService _diarias;
 
         private void Awake() => Montar();
 
@@ -51,6 +52,7 @@ namespace Caos.Simulation
             ServiceLocator.TryGet(out _time);
             ServiceLocator.TryGet(out _missoes);
             ServiceLocator.TryGet(out _xp);
+            ServiceLocator.TryGet(out _diarias);
         }
 
         private void Update()
@@ -105,7 +107,7 @@ namespace Caos.Simulation
                 Toast("Serviços ainda carregando — tente em instantes.");
                 return;
             }
-            SaveSystem.Capture(_attrs, _econ, _rep, _world, _time, _missoes, _xp);
+            SaveSystem.Capture(_attrs, _econ, _rep, _world, _time, _missoes, _xp, _diarias);
             Toast("Jogo salvo.");
         }
 
