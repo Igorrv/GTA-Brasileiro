@@ -59,6 +59,22 @@ namespace Caos.Simulation
         [SerializeField] private float tankLiters      = 40f;
         [SerializeField] private float litersPerKm     = 0.10f;
         [SerializeField] private float fuelPriceRsPerL = 6.5f;
+        // reserva/lâmpada amarela do painel (docs/04 §4.2)
+        [SerializeField] private float reserva01       = 0.15f;
+        // motor começa a engasgar antes de morrer — o carro "chia" nos últimos goles
+        [SerializeField] private float engasque01      = 0.05f;
+        // consumo parado (engarrafamento, docs/04 §4.3 "ocioso"): L/h de ar em marcha lenta
+        [SerializeField] private float ociosoLitrosPorHora = 0.6f;
+
+        [Header("Toque (mobile)")]
+        // zona morta do joystick: no dedo tremido um eixo de 0,05 fica parecendo ruído
+        [SerializeField] private float zonaMorta      = 0.08f;
+        // abaixo desta velocidade o "trás" vira ré em vez de freio (km/h)
+        [SerializeField] private float toleranciaReKmh = 3.5f;
+        // freio-motor quando solta o acelerador: a inércia segura o carro, não deixa rolar igual sabão
+        [SerializeField] private float freioMotor      = 220f;
+        // quanto o carro "arranha" parado em marcha: dá a sensação de câmbio automático (km/h de arraste)
+        [SerializeField] private float arrastoMarchaKmh = 1.2f;
 
         private readonly WheelCollider[] _wheels = new WheelCollider[Wheels];
         private readonly Transform[]     _meshes = new Transform[Wheels];
@@ -71,6 +87,23 @@ namespace Caos.Simulation
         private int   _marcha = 1;            // 0 = ré · 1..N = marchas à frente
         private bool  _built;
         private float _aderenciaLateral = 1.6f;
+
+        // ---- diferenças por classe (moto/carro/caminhão) ----
+        // moto é leve e frágil, caminhão é pesado e duro, carro é o meio-termo. Estes fatores
+        // multiplicam consumo/freio/dano recebido e a velocidade de esterço — é o que faz a CG
+        // responder num toque e a jamanta precisar antecipar a curva.
+        private float _fatorCombustivelClasse = 1f;
+        private float _fatorFreioClasse       = 1f;
+        private float _fatorDanoClasse         = 1f;   // repassado ao VehicleHealth
+        private float _taxaEstercoEfetiva;             // preenchido em ConfigureFromCatalog
+        private bool  _ehCaminhao;                     // caminhão/ônibus/van: freio longo, esterço lento
+
+        // ---- tração por superfície (asfalto procedural vs grama/areia/calçada) ----
+        // a cidade é uma placa de asfalto; o que está em cima (grama do Sítio, areia da Itaúna,
+        // paralelepípedo do Centro) reduz o grip. Lemos o material sob a roda e escalamos a
+        // rigidez lateral — é o que faz o jogador "sentir" que saiu do asfalto.
+        private float _gripSuperficie = 1f;
+        private float _proximoGripScan;
 
         /// <summary>Qual eixo recebe torque. Muda completamente o comportamento na saída de curva.</summary>
         private enum Tracao { Traseira, Dianteira, Integral }
@@ -92,6 +125,16 @@ namespace Caos.Simulation
         public float Fuel01   => tankLiters > 0f ? _fuel / tankLiters : 0f;
         public bool  IsEmpty  => _fuel <= 0.001f;
         public bool  Controlled { get; set; }   // ligado pelo PlayerVehicleLink
+
+        // ---- combustível: aviso de reserva e engasque (docs/04 §4.2/§4.3) ----
+        /// <summary>Tanque na reserva (≤15%): acende a lâmpada amarela do painel.</summary>
+        public bool  Reserva       => tankLiters > 0f && _fuel <= tankLiters * reserva01;
+        /// <summary>Sem gasolina: motor cortado, o carro rola até parar.</summary>
+        public bool  SemCombustivel => _fuel <= 0f;
+        /// <summary>Motor engasgando nos últimos litros — o torque falha em rajada.</summary>
+        public bool  Cortando { get; private set; }
+        /// <summary>Velocidade com sinal: negativa em ré (o HUD/missionador usa para sentido).</summary>
+        public float SpeedKmhComSinal => _rb ? Vector3.Dot(_rb.linearVelocity, transform.forward) * 3.6f : 0f;
 
         // ---- telemetria p/ HUD e áudio ----
         public float Rpm        => _rpm;
@@ -140,7 +183,10 @@ namespace Caos.Simulation
         {
             if (dto == null) return;
             Modelo      = dto;                       // timbre do motor e HUD leem daqui
-            _rb.mass    = Mathf.Max(400f, dto.massa);
+            bool ehMotoAqui = dto.carroceria == "Moto" || dto.classe == "Moto";
+            // moto é leve de verdade (CG ~118 kg); piso de 400 kg a faria virar um tanque. O piso
+            // só protege contra catálogo mal preenchido.
+            _rb.mass    = Mathf.Max(ehMotoAqui ? 80f : 400f, dto.massa);
             _rb.linearDamping    = arrasto * 0.1f;
             tankLiters  = Mathf.Max(8f, dto.tanqueL);
             litersPerKm = dto.consumoKmPorL > 0f ? 1f / dto.consumoKmPorL : litersPerKm;
@@ -173,6 +219,43 @@ namespace Caos.Simulation
             // carro sai da curva mais do que qualquer número de potência.
             _tracao = TracaoDe(dto);
             _ehMoto = dto.carroceria == "Moto" || dto.classe == "Moto";
+            _ehCaminhao = dto.classe == "Caminhao" || dto.classe == "Onibus" ||
+                          dto.classe == "Van"      || dto.classe == "Caminhonete" ||
+                          dto.carroceria == "Onibus" || dto.carroceria == "Caminhao" ||
+                          dto.carroceria == "Van";
+
+            ConfigurarClasse();
+        }
+
+        /// <summary>
+        /// Ajusta os fatores de classe (moto/carro/caminhão) a partir dos flags já detectados. É
+        /// separado para poder rodar de novo no <see cref="TrocarModelo"/> sem recalcular a tração.
+        /// </summary>
+        private void ConfigurarClasse()
+        {
+            // taxa de esterço efetiva: moto responde num piparote, jamanta demora a virar o volante
+            _taxaEstercoEfetiva = taxaEsterço;
+            _fatorCombustivelClasse = 1f;
+            _fatorFreioClasse       = 1f;
+            _fatorDanoClasse         = 1f;
+
+            if (_ehMoto)
+            {
+                _taxaEstercoEfetiva   *= 1.45f;   // ágil no toque
+                _fatorCombustivelClasse = 0.65f;  // CG faz 38 km/L, consome pouco
+                _fatorFreioClasse       = 0.95f;
+                _fatorDanoClasse        = 1.45f;  // frágil em colisão (docs §2.7.2)
+            }
+            else if (_ehCaminhao)
+            {
+                _taxaEstercoEfetiva   *= 0.65f;   // volante pesado
+                _fatorCombustivelClasse = 1.7f;   // bebe muito
+                _fatorFreioClasse       = 0.82f;  // freio longo (30 m a 60 km/h, docs §2.7.4)
+                _fatorDanoClasse        = 0.55f;  // durão — bate e amassa pouco
+            }
+
+            // repassa a durabilidade para a saúde (se já existir; senão Start cuida)
+            if (_health != null) _health.ConfigurarClasse(_fatorDanoClasse, _ehMoto, _ehCaminhao);
         }
 
         /// <summary>Modelo atual — o HUD e o roubo de carro consultam.</summary>
@@ -226,6 +309,12 @@ namespace Caos.Simulation
             ServiceLocator.TryGet(out _econ);
             ServiceLocator.TryGet(out _attrs);
             _health = GetComponent<VehicleHealth>();
+
+            // ConfigureFromCatalog roda antes do VehicleHealth existir (WorldBuilder monta o
+            // controlador, depois a saúde), então repassamos a durabilidade da classe aqui.
+            if (_health != null && _taxaEstercoEfetiva > 0f)
+                _health.ConfigurarClasse(_fatorDanoClasse, _ehMoto, _ehCaminhao);
+            if (_taxaEstercoEfetiva <= 0f) _taxaEstercoEfetiva = taxaEsterço;
         }
 
         private void FixedUpdate()
@@ -243,39 +332,91 @@ namespace Caos.Simulation
             DesviraSePrecisar();
 
             Vector2 m = GameInput.Move;
-            float acelerador = m.y;
+            // zona morta no eixo Y: no toque o dedo tremido vira ruído sem ela
+            float acelerador = AplicarZonaMorta(m.y);
+            float direcaoRaw = AplicarZonaMorta(m.x);
             bool  freioMao   = GameInput.Handbrake;
+            bool  freioBotao = GameInput.Brake;   // pedaleira dedicada (espaço / botão mobile)
 
-            Direcao(m.x);
-            Transmissao(acelerador);
+            Direcao(direcaoRaw);
+            AjustarAderenciaPorSuperficie();
+
+            // ---- intenção do piloto: acelerar, frear ou dar ré ----
+            // No mobile o joystick Y faz os três papéis conforme a velocidade, e a pedaleira
+            // separa o freio forte. É o esquema arcade que funciona com o polegar só.
+            float velSinal = SpeedKmhComSinal;
+            bool parado = Mathf.Abs(velSinal) < toleranciaReKmh;
+            bool querAcelerar = acelerador > 0f;
+            bool querTras     = acelerador < 0f;          // joystick pra baixo
+            bool querRe      = (querTras && parado) || (freioBotao && parado && !querAcelerar);
+
+            Transmissao(querAcelerar, querRe, velSinal);
 
             bool semCombustivel = _fuel <= 0f;
-            bool motorQuebrado  = _health != null && _health.Hp <= 0f;
+            bool motorQuebrado  = _health != null && _health.Broken;
+
+            // ---- engasque: nos últimos litros o motor falha em rajada ----
+            bool engasgando = !semCombustivel && !motorQuebrado && Reserva && _fuel <= tankLiters * engasque01;
+            Cortando = engasgando && Random.value < 0.35f;
 
             if (semCombustivel || motorQuebrado)
             {
+                // motor morto: NÃO trava o carro de uma vez — ele rola com o freio-motor e para sozinho,
+                // como qualquer carro que ficou sem gasolina na vida real (docs/04 §4.6). Os freios
+                // continuam funcionando (são mecânicos, não dependem do motor).
                 _fuel = Mathf.Max(0f, _fuel);
-                ApplyBrake(freioMax * 0.22f);
                 ApplyMotor(0f);
+                if (freioBotao || (querTras && velSinal > toleranciaReKmh))
+                    Frear(freioMax);
+                else
+                    ApplyBrake(freioMotor * (_ehCaminhao ? 1.3f : 1f));
                 _rpm = Mathf.Lerp(_rpm, 0f, Time.fixedDeltaTime * 2f);
             }
             else
             {
-                bool freando = GameInput.Brake || (acelerador < -0.05f && SpeedKmh > 5f);
-                if (freando)
+                float fatorMotor = _health != null ? _health.FatorMotor : 1f;
+
+                // pedaleira de freio: trava tudo, independente do sentido (é o freio de verdade)
+                if (freioBotao)
                 {
-                    // balanço de freio: mais na frente, como em qualquer carro de rua
-                    _wheels[FL].brakeTorque = _wheels[FR].brakeTorque = freioMax * balancoFreio;
-                    _wheels[RL].brakeTorque = _wheels[RR].brakeTorque = freioMax * (1f - balancoFreio);
+                    Frear(freioMax);
+                    ApplyMotor(0f);
+                }
+                else if (querAcelerar)
+                {
+                    // saindo da ré: freia a marcha-atrás antes de ir pra frente
+                    if (_marcha == 0 && velSinal < -0.5f) Frear(freioMax * 0.6f);
+                    else
+                    {
+                        ApplyBrake(0f);
+                        float torque = SpeedKmh > _topKmh ? 0f : acelerador * TorqueNoRpm() * fatorMotor;
+                        if (Cortando) torque *= 0.15f;     // engasque: o carro "corta" o giro
+                        ApplyMotor(torque);
+                    }
+                }
+                else if (querRe)
+                {
+                    // ré: torque negativo na roda, proporcional ao quanto o piloto empurra pra trás
+                    ApplyBrake(0f);
+                    float torqueRe = -Mathf.Abs(acelerador) * TorqueNoRpm() * fatorMotor * 0.8f;
+                    if (freioBotao) torqueRe = -TorqueNoRpm() * fatorMotor * 0.8f; // pedaleira = ré cheia
+                    ApplyMotor(torqueRe);
+                }
+                else if (querTras && velSinal > toleranciaReKmh)
+                {
+                    // joystick pra baixo andando pra frente: freio (freio-motor + freio de atrito)
+                    Frear(freioMax * 0.7f);
                     ApplyMotor(0f);
                 }
                 else
                 {
-                    ApplyBrake(0f);
-                    float torque = SpeedKmh > _topKmh ? 0f : acelerador * TorqueNoRpm();
-                    ApplyMotor(torque);
-                    ConsumeFuel(acelerador);
+                    // nenhum pedal: rola livre com leve freio-motor (inércia, não sabão)
+                    ApplyMotor(0f);
+                    ApplyBrake(freioMotor * 0.4f);
                 }
+
+                // consumo só conta com motor vivo
+                ConsumeFuel(querAcelerar || querRe ? Mathf.Abs(acelerador) : 0f);
             }
 
             FreioDeMao(freioMao);
@@ -284,13 +425,32 @@ namespace Caos.Simulation
             if (GameInput.Refuel) Refuel();
         }
 
+        /// <summary>Aplica zona morta simétrica num eixo -1..1 (toque não vira ruído perto do centro).</summary>
+        private float AplicarZonaMorta(float v)
+        {
+            float a = Mathf.Abs(v);
+            if (a <= zonaMorta) return 0f;
+            return Mathf.Sign(v) * Mathf.InverseLerp(zonaMorta, 1f, a);
+        }
+
+        /// <summary>Freia com balanço dianteiro/traseiro e escala pela classe (caminhão freia mais devagar).</summary>
+        private void Frear(float intensidade)
+        {
+            float f = intensidade * _fatorFreioClasse * (_health != null ? _health.FatorFreio : 1f);
+            _wheels[FL].brakeTorque = _wheels[FR].brakeTorque = f * balancoFreio;
+            _wheels[RL].brakeTorque = _wheels[RR].brakeTorque = f * (1f - balancoFreio);
+        }
+
         // ------------------------------------------------------------------ direção
         private void Direcao(float entrada)
         {
             // limite de esterço cai com a velocidade: evita o "carrinho de controle remoto"
             float limite = Mathf.Lerp(esterçoMax, esterçoMin, Mathf.Clamp01(SpeedKmh / 120f));
-            float alvo   = Mathf.Clamp(entrada, -1f, 1f) * limite;
-            _steer = Mathf.MoveTowards(_steer, alvo, taxaEsterço * Time.fixedDeltaTime);
+            // dano na direção puxa o volante pra um lado (docs/04 §3.3) — o jogador precisa
+            // compensar, é o feedback de que a direção foi atingida
+            float puxa = _health != null ? _health.PuxaDirecao : 0f;
+            float alvo = (Mathf.Clamp(entrada, -1f, 1f) + puxa) * limite;
+            _steer = Mathf.MoveTowards(_steer, alvo, _taxaEstercoEfetiva * Time.fixedDeltaTime);
 
             // Ackermann: a roda de dentro descreve um raio menor, então esterça mais
             float rad = Mathf.Abs(_steer) * Mathf.Deg2Rad;
@@ -310,15 +470,15 @@ namespace Caos.Simulation
         }
 
         // ------------------------------------------------------------------ transmissão
-        private void Transmissao(float acelerador)
+        private void Transmissao(bool querAcelerar, bool querRe, float velSinal)
         {
             float velRoda = 0f;
             for (int i = 0; i < Wheels; i++) velRoda += Mathf.Abs(_wheels[i].rpm);
             velRoda /= Wheels;
 
-            // ré quando o jogador insiste em trás com o carro quase parado
-            if (acelerador < -0.1f && SpeedKmh < 3f) _marcha = 0;
-            else if (_marcha == 0 && acelerador > 0.1f) _marcha = 1;
+            // ré quando o piloto pede trás com o carro quase parado; volta pra frente ao acelerar
+            if (querRe && _marcha != 0 && velSinal < toleranciaReKmh)            _marcha = 0;
+            else if (querAcelerar && _marcha == 0 && velSinal < toleranciaReKmh) _marcha = 1;
 
             // troca manual: assim que o jogador toca no câmbio, o automático se cala
             if (GameInput.MarchaAcima)  { Manual = true; if (_marcha < marchas.Length) _marcha++; }
@@ -358,10 +518,12 @@ namespace Caos.Simulation
         private void FreioDeMao(bool ativo)
         {
             Derrapando = false;
+            // a rigidez lateral da traseira combina: base × superfície × dano × (freio de mão?)
+            float baseLat = _aderenciaLateral * _gripSuperficie * (_health != null ? _health.FatorAderencia : 1f);
             for (int i = RL; i <= RR; i++)
             {
                 var atrito = _wheels[i].sidewaysFriction;
-                atrito.stiffness = ativo ? _aderenciaLateral * 0.28f : _aderenciaLateral * 0.92f;
+                atrito.stiffness = ativo ? baseLat * 0.28f : baseLat * 0.92f;
                 _wheels[i].sidewaysFriction = atrito;
             }
             if (!ativo) return;
@@ -399,6 +561,65 @@ namespace Caos.Simulation
             if (v < 0.5f) return;
             _rb.AddForce(-transform.up * downforce * v * 0.06f);              // cola no chão em alta
             _rb.AddForce(-_rb.linearVelocity.normalized * arrasto * v * v * 0.02f); // arrasto ~ v²
+        }
+
+        /// <summary>
+        /// Tração por superfície: lê o material sob a roda e escala a rigidez do <see cref="WheelCollider"/>.
+        /// O asfalto procedural da cidade (placa "Pista" com <c>CaosTex_Asfalto</c>) entrega grip cheio;
+        /// grama do Sítio, areia da Itaúna e paralelepípedo do Centro derrubam a aderência — é o que
+        /// faz o jogador "sentir" que saiu do asfalto sem um só collider a mais. Lê só uma roda e
+        /// reamostra a cada ~0,15 s: mexer em friction todo frame deixa o WheelCollider instável.
+        /// </summary>
+        private void AjustarAderenciaPorSuperficie()
+        {
+            if (Time.time < _proximoGripScan) return;
+            _proximoGripScan = Time.time + 0.15f;
+
+            float novoGrip = GripDaSuperficie(_wheels[RL]);
+            if (Mathf.Approximately(novoGrip, _gripSuperficie)) return;
+            _gripSuperficie = novoGrip;
+
+            float fatorAder = _health != null ? _health.FatorAderencia : 1f;
+            // atrito longitudinal: patina mais na grama/areia (arrancada "queima-pneu" fora do asfalto)
+            for (int i = 0; i < Wheels; i++)
+            {
+                var fw = _wheels[i].forwardFriction;
+                fw.stiffness = 1.6f * _gripSuperficie * fatorAder;
+                _wheels[i].forwardFriction = fw;
+            }
+            // dianteira: a traseira é reescrita por FreioDeMao() logo abaixo, que já incorpora o grip
+            for (int i = FL; i <= FR; i++)
+            {
+                var sw = _wheels[i].sidewaysFriction;
+                sw.stiffness = _aderenciaLateral * _gripSuperficie * fatorAder;
+                _wheels[i].sidewaysFriction = sw;
+            }
+        }
+
+        /// <summary>Lê o material sob a roda e devolve um multiplicador de grip (1 = asfalto).</summary>
+        private float GripDaSuperficie(WheelCollider w)
+        {
+            if (!w.GetGroundHit(out WheelHit hit) || hit.collider == null) return 1f;
+            // o nome do material texturizado é "CaosTex_{Superficie}_{tx}x{ty}"; o asfalto da cidade
+            // é exatamente "CaosTex_Asfalto_...". Sem renderer (pista invisível?) assume asfalto.
+            var rend = hit.collider.GetComponentInParent<Renderer>();
+            if (rend == null || rend.sharedMaterial == null) return 1f;
+            string nome = rend.sharedMaterial.name;
+            if (nome == null) return 1f;
+            int i = nome.IndexOf("CaosTex_");
+            if (i < 0) return 1f;
+            string resto = nome.Substring(i + 8);
+            int fim = resto.IndexOf('_');
+            string sup = fim < 0 ? resto : resto.Substring(0, fim);
+            switch (sup)
+            {
+                case "Asfalto":  return 1.00f;
+                case "Calcada":  return 0.88f;   // paralelepípedo do Centro
+                case "Grama":    return 0.78f;    // Sítio do Capim
+                case "Areia":   return 0.60f;    // praia da Itaúna — patina e derrapa fácil
+                case "Madeira":  return 0.85f;
+                default:        return 1.00f;    // desconhecido: assume asfalto (não pune o jogador)
+            }
         }
 
         /// <summary>
@@ -490,12 +711,23 @@ namespace Caos.Simulation
             transform.rotation = Quaternion.Euler(e.x, e.y, _inclinacao);
         }
         private float _inclinacao;
-        private void ApplyBrake(float b) { for (int i = 0; i < Wheels; i++) _wheels[i].brakeTorque = b; }
+        private void ApplyBrake(float b)
+        {
+            // freio de atrito uniforme escala com a classe (jamanta freia mais devagar) e o dano
+            float f = b * _fatorFreioClasse * (_health != null ? _health.FatorFreio : 1f);
+            for (int i = 0; i < Wheels; i++) _wheels[i].brakeTorque = f;
+        }
 
         private void ConsumeFuel(float throttle)
         {
             float distKm = (SpeedKmh * Time.fixedDeltaTime) / 3600f;
-            _fuel -= (litersPerKm * distKm) + Mathf.Abs(throttle) * litersPerKm * distKm * 1.5f;
+            // consumo base + aceleração (pisar fundo bebe mais) × fator de classe (moto economiza, jamanta bebe)
+            float consumo = (litersPerKm * distKm) + Mathf.Abs(throttle) * litersPerKm * distKm * 1.5f;
+            consumo *= _fatorCombustivelClasse;
+            // marcha-lenta: parado no engarrafamento ainda gasta (docs/04 §4.3 "ocioso")
+            if (SpeedKmh < arrastoMarchaKmh && _marcha != 0)
+                consumo += ociosoLitrosPorHora * _fatorCombustivelClasse * (Time.fixedDeltaTime / 3600f);
+            _fuel -= consumo;
             if (_fuel < 0f) _fuel = 0f;
         }
 
