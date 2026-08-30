@@ -66,6 +66,12 @@ Desktop.ini
 /tools/**/[Bb]in/
 /tools/**/[Oo]bj/
 
+# ===================== Ferramentas Python =====================
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
 # ===================== Recovery / local =====================
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta
