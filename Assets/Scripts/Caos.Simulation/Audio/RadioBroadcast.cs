@@ -100,7 +100,7 @@ namespace Caos.Simulation.Audio
         private CaosDsp.Ruido  _rndPortadora = new CaosDsp.Ruido(99);
         private CaosDsp.Ruido  _rndSintonia = new CaosDsp.Ruido(4242);
         private CaosDsp.PassaAlta _hpTx;
-        private CaosDsp.PassaBaixa _lpTx;
+        private CaosDsp.Biquad    _lpTx, _lpTxFi;
         private CaosDsp.Biquad _presenca, _sintoniaBanda;
         private CaosDsp.Compressor _comp;
         private bool  _cadeiaPronta;
@@ -301,7 +301,8 @@ namespace Caos.Simulation.Audio
                     mix = Mathf.Lerp(mix, Estatica(dt), Mathf.Clamp01(_estaticaT * 4f));
                 }
 
-                destino[i] = CaosDsp.Saturar(mix * est.Ganho);
+                // a saturação de verdade já aconteceu dentro da cadeia; esta é só rede de segurança
+                destino[i] = CaosDsp.Saturar(mix * est.Ganho * 0.9f);
             }
 
             NivelDeVoz = Mathf.Clamp01(_envVoz * 5f);
@@ -333,7 +334,8 @@ namespace Caos.Simulation.Audio
         {
             var est = prog?.Estacao;
             _hpTx.Ajustar(est != null ? est.GraveHz : 60f, _taxa);
-            _lpTx.Ajustar(est != null ? est.AgudoHz : 9000f, _taxa);
+            _lpTx.PassaBaixa(est != null ? est.AgudoHz : 9000f, 0.707f, _taxa);
+            _lpTxFi.PassaBaixa(est != null ? est.AgudoHz : 9000f, 0.54f, _taxa);
             _presenca.Pico(2600f, 1.1f, est != null ? est.Presenca : 3f, _taxa);
             _sintoniaBanda.PassaBanda(2200f, 3.5f, _taxa);
             _comp.Configurar();
@@ -348,40 +350,42 @@ namespace Caos.Simulation.Audio
                     _bumbo.Configurar(78f, 44f, 42f, 7.5f, 0.10f, 11);       // tamborzão: grave e longo
                     _caixa.Configurar(220f, 1900f, 1.1f, 26f, 0.72f, _taxa, 12);
                     _tamborim.Configurar(410f, 1200f, 2.2f, 34f, 0.55f, _taxa, 13);
-                    _chimbal.Configurar(7200f, 62f, _taxa, 14);
+                    _chimbal.Configurar(4600f, 62f, _taxa, 14);
                     break;
                 case Genero.Forro:
                     _bumbo.Configurar(92f, 58f, 26f, 6.0f, 0.05f, 21);       // zabumba
                     _caixa.Configurar(300f, 2600f, 1.6f, 44f, 0.85f, _taxa, 22);   // o tapa
                     _tamborim.Configurar(380f, 1500f, 2.0f, 30f, 0.6f, _taxa, 23);
-                    _chimbal.Configurar(6000f, 70f, _taxa, 24);
-                    _triangulo.Configurar(4100f, 16f);
+                    _chimbal.Configurar(4200f, 70f, _taxa, 24);
+                    _triangulo.Configurar(2950f, 16f, _taxa);
                     break;
                 case Genero.Samba:
                     _surdo.Configurar(88f, 62f, 20f, 4.2f, 0.04f, 31);       // surdo de marcação
                     _bumbo.Configurar(70f, 52f, 30f, 9f, 0.05f, 32);
                     _tamborim.Configurar(520f, 2400f, 2.4f, 40f, 0.7f, _taxa, 33);
                     _caixa.Configurar(240f, 1700f, 1.2f, 30f, 0.75f, _taxa, 34);
-                    _ganza.Configurar(5200f, 55f, _taxa, 35);
+                    _ganza.Configurar(3600f, 55f, _taxa, 35);
                     break;
                 case Genero.Sertanejo:
                     _bumbo.Configurar(72f, 50f, 30f, 9f, 0.08f, 41);
                     _caixa.Configurar(230f, 1800f, 1.2f, 24f, 0.78f, _taxa, 42);
-                    _chimbal.Configurar(6800f, 58f, _taxa, 43);
+                    _chimbal.Configurar(4300f, 58f, _taxa, 43);
                     break;
                 case Genero.Rock:
                     _bumbo.Configurar(80f, 48f, 34f, 10f, 0.14f, 51);
                     _caixa.Configurar(200f, 1500f, 0.9f, 20f, 0.80f, _taxa, 52);
-                    _chimbal.Configurar(7600f, 46f, _taxa, 53);
+                    _chimbal.Configurar(5000f, 46f, _taxa, 53);
                     break;
                 case Genero.Gospel:
                     _bumbo.Configurar(66f, 48f, 26f, 8f, 0.03f, 61);
                     _caixa.Configurar(210f, 1600f, 1.0f, 22f, 0.6f, _taxa, 62);
+                    _tamborim.Configurar(430f, 2400f, 1.6f, 26f, 0.85f, _taxa, 63);   // pandeiro do louvor
+                    _chimbal.Configurar(4000f, 54f, _taxa, 64);
                     break;
                 default:  // notícias — redação, não banda
                     _chimbal.Configurar(4200f, 120f, _taxa, 71);
                     _tamborim.Configurar(900f, 3000f, 3f, 90f, 0.9f, _taxa, 72);
-                    _triangulo.Configurar(2600f, 24f);
+                    _triangulo.Configurar(2600f, 24f, _taxa);
                     break;
             }
         }
@@ -519,11 +523,14 @@ namespace Caos.Simulation.Audio
         {
             if (passo == 0 || passo == 8) _bumbo.Tocar(0.45f * forca);
             if (passo == 8)               _caixa.Tocar(0.30f * forca);
+            if (passo == 4 || passo == 12) _tamborim.Tocar(0.34f * forca);   // pandeiro no 2 e no 4
+            if (Bate(kOitavos, passo))     _chimbal.Tocar(passo % 4 == 0 ? 0.16f : 0.10f);
             if (passo == 0 || passo == 8)
             {
                 _baixo.Tocar(Nota(est, 0, 1), 0.75f);
-                _cordas[0].Tocar(Nota(est, GrauDoAcorde(est, 0), 4), 0.22f, _taxa, 1.1f, 0.5f);
-                _cordas[1].Tocar(Nota(est, GrauDoAcorde(est, 2), 4), 0.18f, _taxa, 1.1f, 0.5f);
+                _cordas[0].Tocar(Nota(est, GrauDoAcorde(est, 0), 4), 0.22f, _taxa, 1.1f, 0.35f);
+                _cordas[1].Tocar(Nota(est, GrauDoAcorde(est, 2), 4), 0.18f, _taxa, 1.1f, 0.35f);
+                _cordas[2].Tocar(Nota(est, GrauDoAcorde(est, 1), 5), 0.14f, _taxa, 0.8f, 0.3f);
             }
             _alvoPalheta = 0.26f;
             _alvoNaipe   = 0.30f * forca;
@@ -681,9 +688,11 @@ namespace Caos.Simulation.Audio
                 case Genero.Gospel:
                     s += _bumbo.Render(dt) * 0.55f
                        + _caixa.Render(dt, _taxa) * 0.25f
+                       + _tamborim.Render(dt, _taxa) * 0.42f
+                       + _chimbal.Render(dt) * 0.30f
                        + _baixo.Render(dt, _taxa, 0.9f, 420f) * 0.70f
-                       + (_cordas[0].Render() + _cordas[1].Render()) * 0.32f
-                       + _palheta.Render(dt, _taxa, _freqPalheta, _alvoPalheta, 0.002f, 2800f, 6.5f) * 0.55f
+                       + (_cordas[0].Render() + _cordas[1].Render() + _cordas[2].Render()) * 0.42f
+                       + _palheta.Render(dt, _taxa, _freqPalheta, _alvoPalheta, 0.002f, 5200f, 6.5f) * 0.50f
                        + _naipe.Render(dt, _freqNaipe, _alvoNaipe, 0.008f, 0.9f) * 0.45f;
                     break;
 
@@ -738,20 +747,34 @@ namespace Caos.Simulation.Audio
         /// </summary>
         private float CadeiaDeTransmissao(float x, Estacao est, float dt)
         {
-            x = _hpTx.Filtrar(x);
-            x = _lpTx.Filtrar(x);
+            // A ordem aqui é a da cadeia real, e ela importa mais do que parece. O chiado de portadora
+            // e a distorção do processador nascem ANTES do filtro de banda, e o filtro de banda é a
+            // última coisa do caminho — no rádio de verdade quem corta por último é a FI do receptor.
+            //
+            // Com o chiado somado no fim e a saturação depois do filtro, a medição mostrava a AM com
+            // mais energia acima de 4 kHz do que a FM: exatamente o contrário do que uma onda média é.
+            // O ruído passava por fora do filtro e os harmônicos da saturação nasciam depois dele.
+            x += _rndPortadora.Proximo() * est.Chiado;
             x = _presenca.Filtrar(x);
             x = _comp.Processar(x, 0.22f, 2.5f + 7f * est.Compressao, 0.02f, 0.0006f) * (1f + est.Compressao * 0.9f);
+            x = CaosDsp.Saturar(x);
+
+            x = _hpTx.Filtrar(x);
+            x = _lpTx.Filtrar(x);
 
             if (est.Am)
             {
+                // segundo estágio só na AM: 24 dB/oitava é a ordem de um filtro de FI de onda média, e
+                // é o que faz a estação soar realmente estreita em vez de só um pouco abafada
+                x = _lpTxFi.Filtrar(x);
+
                 _faseDesvanece = CaosDsp.Avancar(_faseDesvanece, 0.043f * dt);
                 float alvo = 0.72f + 0.28f * CaosDsp.Seno(_faseDesvanece);
                 _fadeDesvanece += (alvo - _fadeDesvanece) * dt * 1.5f;
                 x *= _fadeDesvanece;
             }
 
-            return x + _rndPortadora.Proximo() * est.Chiado;
+            return x;
         }
 
         /// <summary>Chiado de dial: ruído em banda varrendo, com o assobio de batimento entre portadoras.</summary>

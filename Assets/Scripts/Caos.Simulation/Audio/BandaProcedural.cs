@@ -115,11 +115,22 @@ namespace Caos.Simulation.Audio
         {
             private float _t, _vel;
             private float _f1, _f2, _f3, _decai;
+            private float _a1, _a2, _a3;
             private float _p1, _p2, _p3;
 
-            public void Configurar(float baseHz, float decai)
+            /// <summary>
+            /// Os parciais acima de Nyquist são <b>zerados</b>, não só somados. Com base em 4,1 kHz a
+            /// segunda parcial cai em 11,3 kHz, acima dos 11,025 kHz de Nyquist a 22,05 kHz: sem essa
+            /// checagem ela reaparece rebatida como um assobio grave e desafinado, que é o oposto do
+            /// que um triângulo deveria fazer.
+            /// </summary>
+            public void Configurar(float baseHz, float decai, int taxa)
             {
+                float limite = taxa * 0.45f;
                 _f1 = baseHz; _f2 = baseHz * 2.76f; _f3 = baseHz * 5.40f;
+                _a1 = _f1 < limite ? 0.5f : 0f;
+                _a2 = _f2 < limite ? 0.32f : 0f;
+                _a3 = _f3 < limite ? 0.18f : 0f;
                 _decai = decai;
                 _t = 99f;
             }
@@ -132,7 +143,7 @@ namespace Caos.Simulation.Audio
                 _p1 = CaosDsp.Avancar(_p1, _f1 * dt);
                 _p2 = CaosDsp.Avancar(_p2, _f2 * dt);
                 _p3 = CaosDsp.Avancar(_p3, _f3 * dt);
-                float s = CaosDsp.Seno(_p1) * 0.5f + CaosDsp.Seno(_p2) * 0.32f + CaosDsp.Seno(_p3) * 0.18f;
+                float s = CaosDsp.Seno(_p1) * _a1 + CaosDsp.Seno(_p2) * _a2 + CaosDsp.Seno(_p3) * _a3;
                 float env = CaosDsp.Decaimento(_t, _decai);
                 _t += dt;
                 return s * env * _vel;
