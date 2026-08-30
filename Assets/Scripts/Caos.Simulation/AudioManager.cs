@@ -1,240 +1,329 @@
+using Caos.Core;
+using Caos.Simulation.Audio;
+using Caos.World;
 using UnityEngine;
 
 namespace Caos.Simulation
 {
     /// <summary>
-    /// Áudio 100% procedural (docs/12 §12.6): todos os clipes são gerados em runtime via
-    /// <see cref="AudioClip.Create"/> (PCM), sem importar nenhum asset.
+    /// Áudio 100% procedural (docs/12 §12.6): nenhum asset importado, tudo gerado em runtime.
     ///
-    /// O ponto central é o <b>motor guiado por RPM</b>, e não por velocidade. É essa diferença que faz
-    /// a <b>troca de marcha ser audível</b>: o câmbio sobe a marcha, o giro cai, o tom despenca e volta
-    /// a subir — exatamente como num carro. Velocidade constante com marcha trocando não muda nada se
-    /// o som seguir a velocidade; seguindo o giro, muda tudo.
+    /// O ponto central continua sendo o <b>motor guiado por RPM</b>, e não por velocidade — é isso que
+    /// faz a <b>troca de marcha ser audível</b>: o câmbio sobe, o giro cai, o tom despenca e volta a
+    /// subir. A diferença é como isso é produzido. Antes era um laço de meio segundo esticado por
+    /// <c>pitch</c> de 0,62× a 2,45×, o que trazia dois defeitos embutidos: o clipe não fechava no
+    /// ponto de laço (55 Hz em 0,5 s dá 27,5 ciclos, ou seja, um estalo duas vezes por segundo) e o
+    /// <c>pitch</c> arrastava o chiado da admissão junto, virando assobio em alta rotação. Agora o
+    /// motor é sintetizado a partir do giro real, no <see cref="MotorSynth"/>.
+    ///
+    /// Este componente é a <b>ponte</b>: lê o veículo e o mundo na thread principal e alimenta três
+    /// fluxos — veículo (motor, pneu, vento), cidade (<see cref="CidadeAmbiente"/>) e os disparos
+    /// curtos. Toda mixagem passa pela <see cref="AudioDirector"/>, então buzina e batida abrem espaço
+    /// no rádio, a cabine abafa a rua e a pausa silencia tudo com fade em vez de corte seco.
     ///
     /// Vozes:
-    ///  • <b>Motor</b> — drone harmônico em loop, pitch pelo giro, volume pelo acelerador;
-    ///  • <b>Troca</b> — "chunk" curto a cada mudança de marcha;
-    ///  • <b>Pneu</b> — chiado enquanto derrapa (freio de mão / curva no limite);
+    ///  • <b>Motor</b> — harmônicas da ordem de ignição, admissão com carga, retorno no freio-motor,
+    ///    pipoco no corte de giro;
+    ///  • <b>Troca</b> — "chunk" curto a cada mudança de marcha, com solavanco na lataria;
+    ///  • <b>Pneu</b> e <b>vento</b> — dentro do mesmo fluxo do motor;
     ///  • <b>Buzina</b> — duas notas, tecla <b>H</b> (é o Brasil, a buzina é infraestrutura);
-    ///  • <b>Chime</b> — missão concluída;  • <b>Ambiente</b> — cama sutil sempre ligada.
+    ///  • <b>Batida</b> — proporcional ao estrago que a colisão causou;
+    ///  • <b>Chime</b> — missão concluída;  • <b>Cidade</b> — cama viva, muda com a hora e com a polícia.
     /// </summary>
     public class AudioManager : MonoBehaviour
     {
-        private const int kSampleRate = 22050;
+        private const int kTaxa = 22050;
 
         private VehicleController _vehicle;
         private PlayerVehicleLink _link;
+        private VehicleHealth     _health;
+        private PoliceSystem      _policia;
+        private WorldStateService _mundo;
+        private TimeOfDayService  _hora;
+        private Transform         _ouvinte;
 
-        private AudioSource _motor, _sfx, _pneu, _ambiente;
-        private AudioClip _clipMotor, _clipChime, _clipAmbiente, _clipTroca, _clipPneu, _clipBuzina;
+        private AudioSource _fonteVeiculo, _fonteCidade, _sfx;
+        private FluxoDeAudio _fluxoVeiculo, _fluxoCidade;
+        private MotorSynth     _motor;
+        private CidadeAmbiente _cidade;
+
+        private AudioClip _clipChime, _clipTroca, _clipBuzina, _clipBatida;
 
         private int   _marchaAnterior = 1;
-        private float _giroSuave;
+        private float _hpAnterior = -1f;
+        private float _buracoAnterior = -99f;
+        private float _proximaBusca;
 
         public void Init(VehicleController vehicle, PlayerVehicleLink link)
         {
             _vehicle = vehicle;
             _link    = link;
+            if (vehicle != null) _health = vehicle.GetComponent<VehicleHealth>();
         }
 
         private void Awake()
         {
-            _clipMotor    = ClipeMotor();
-            _clipChime    = ClipeChime();
-            _clipAmbiente = ClipePad();
-            _clipTroca    = ClipeTroca();
-            _clipPneu     = ClipePneu();
-            _clipBuzina   = ClipeBuzina();
+            _clipChime  = ClipeChime();
+            _clipTroca  = ClipeTroca();
+            _clipBuzina = ClipeBuzina();
+            _clipBatida = ClipeBatida();
 
-            _motor = gameObject.AddComponent<AudioSource>();
-            _motor.clip = _clipMotor; _motor.loop = true; _motor.volume = 0f;
-            _motor.spatialBlend = 0f; _motor.playOnAwake = false;
-            _motor.Play();
+            _motor  = new MotorSynth(kTaxa);
+            _cidade = new CidadeAmbiente(kTaxa);
 
-            _pneu = gameObject.AddComponent<AudioSource>();
-            _pneu.clip = _clipPneu; _pneu.loop = true; _pneu.volume = 0f;
-            _pneu.spatialBlend = 0f; _pneu.playOnAwake = false;
-            _pneu.Play();
+            _fluxoVeiculo = FluxoDeAudio.Criar("veiculo", _motor, kTaxa);
+            _fluxoCidade  = FluxoDeAudio.Criar("cidade",  _cidade, kTaxa);
+
+            if (_fluxoVeiculo != null) { _fonteVeiculo = _fluxoVeiculo.Instalar(gameObject); _fonteVeiculo.Play(); }
+            if (_fluxoCidade  != null) { _fonteCidade  = _fluxoCidade.Instalar(gameObject);  _fonteCidade.Play(); }
 
             _sfx = gameObject.AddComponent<AudioSource>();
-            _sfx.spatialBlend = 0f; _sfx.playOnAwake = false;
+            _sfx.spatialBlend = 0f;
+            _sfx.playOnAwake = false;
+            _sfx.bypassReverbZones = true;
+        }
 
-            _ambiente = gameObject.AddComponent<AudioSource>();
-            _ambiente.clip = _clipAmbiente; _ambiente.loop = true; _ambiente.volume = 0.14f;
-            _ambiente.spatialBlend = 0f; _ambiente.playOnAwake = true;
+        private void Start()
+        {
+            ServiceLocator.TryGet(out _mundo);
+            ServiceLocator.TryGet(out _hora);
+            var ouvinte = FindObjectOfType<AudioListener>();
+            if (ouvinte != null) _ouvinte = ouvinte.transform;
         }
 
         private void Update()
         {
-            if (_motor == null) return;
-            float dt = Time.deltaTime;
-
             bool dirigindo = _link != null && !_link.OnFoot && _vehicle != null;
 
-            if (GameInput.Horn && dirigindo && _sfx != null && _clipBuzina != null)
-                _sfx.PlayOneShot(_clipBuzina, 0.7f);
+            AtualizarVeiculo(dirigindo);
+            AtualizarCidade(dirigindo);
+
+            if (_fonteVeiculo != null) _fonteVeiculo.volume = AudioDirector.Ganho(Barramento.Motor);
+            if (_fonteCidade  != null) _fonteCidade.volume  = AudioDirector.Ganho(Barramento.Ambiente);
+        }
+
+        // ------------------------------------------------------------------ veículo
+        private void AtualizarVeiculo(bool dirigindo)
+        {
+            if (_motor == null) return;
+
+            // a buzina é consultada sempre, senão o toque fica pendurado no buffer virtual do touch e
+            // dispara sozinho na próxima vez que o jogador entrar no carro
+            bool buzinou = GameInput.Horn;
 
             if (!dirigindo)
             {
-                _motor.volume = Mathf.Lerp(_motor.volume, 0f, dt * 4f);
-                _pneu.volume  = Mathf.Lerp(_pneu.volume,  0f, dt * 6f);
-                _giroSuave = 0f;
+                _motor.Ligado = 0f;
+                _motor.Carga = 0f;
+                _motor.Derrapagem = 0f;
+                _motor.Velocidade01 = 0f;
+                _motor.NaCabine = 0f;
+                AudioDirector.RuidoDeFundo = 0f;
+                _hpAnterior = -1f;
                 return;
             }
 
-            // ---- motor: pitch pelo GIRO (é isso que faz a marcha soar) ----
-            float giro = _vehicle.Rpm01;
-            _giroSuave = Mathf.Lerp(_giroSuave, giro, dt * 12f);
+            _motor.Ligado       = 1f;
+            _motor.NaCabine     = 1f;
+            _motor.Rpm          = _vehicle.Rpm;
+            _motor.Carga        = Mathf.Clamp01(Mathf.Abs(GameInput.Move.y));
+            _motor.Timbre       = _vehicle.Timbre;
+            _motor.Derrapagem   = _vehicle.Derrapando ? 1f : 0f;
+            _motor.Velocidade01 = Mathf.Clamp01(_vehicle.SpeedKmh / 130f);
 
-            // 0,62 na marcha lenta até 2,45 no corte: quase 2 oitavas de excursão
-            // o timbre do modelo desloca a faixa inteira: moto fica aguda, caminhão fica grave
-            _motor.pitch  = Mathf.Lerp(0.62f, 2.45f, _giroSuave) * _vehicle.Timbre;
-            float carga   = Mathf.Clamp01(Mathf.Abs(GameInput.Move.y));
-            _motor.volume = Mathf.Lerp(_motor.volume, Mathf.Lerp(0.16f, 0.42f, carga * 0.6f + _giroSuave * 0.4f), dt * 6f);
+            float giro01 = Mathf.Clamp01(_vehicle.Rpm01);
+            AudioDirector.RuidoDeFundo = Mathf.Clamp01(giro01 * 0.55f + _motor.Velocidade01 * 0.65f);
 
-            // ---- troca de marcha: corta o som um instante e dá o "chunk" ----
+            if (buzinou && _clipBuzina != null)
+            {
+                Tocar(_clipBuzina, 0.75f);
+                AudioDirector.DestacarSfx(0.55f, 0.55f);
+            }
+
+            // ---- troca de marcha ----
             if (_vehicle.Marcha != _marchaAnterior)
             {
                 _marchaAnterior = _vehicle.Marcha;
-                if (_clipTroca != null) _sfx.PlayOneShot(_clipTroca, 0.55f);
-                _motor.volume *= 0.45f;         // alívio do acelerador na troca
-                _giroSuave    *= 0.72f;         // e o giro cai junto
+                Tocar(_clipTroca, 0.5f);
+                _motor.Sacudir(0.28f);
+                AudioDirector.DestacarSfx(0.22f, 0.18f);
             }
 
-            // no corte de giro o motor engasga em vez de subir sem parar
-            if (_vehicle.NoCorte) _motor.pitch *= 0.94f + Mathf.Sin(Time.time * 60f) * 0.045f;
+            // ---- buraco: o mesmo carimbo de tempo que a câmera usa pro solavanco ----
+            if (_vehicle.BuracoSentido > _buracoAnterior)
+            {
+                _buracoAnterior = _vehicle.BuracoSentido;
+                _motor.Sacudir(Mathf.Lerp(0.25f, 0.7f, _motor.Velocidade01));
+            }
 
-            // ---- pneu cantando ----
-            bool cantando = _vehicle.Derrapando;
-            _pneu.volume = Mathf.Lerp(_pneu.volume, cantando ? 0.30f : 0f, dt * 8f);
-            _pneu.pitch  = Mathf.Lerp(0.85f, 1.35f, Mathf.Clamp01(_vehicle.SpeedKmh / 90f));
+            // ---- batida: a força vem do estrago que a colisão de fato causou ----
+            if (_health != null)
+            {
+                if (_hpAnterior < 0f) _hpAnterior = _health.Hp;
+                float dano = _hpAnterior - _health.Hp;
+                _hpAnterior = _health.Hp;
+                if (dano > 1.5f)
+                {
+                    float peso = Mathf.Clamp01(dano / 28f);
+                    Tocar(_clipBatida, Mathf.Lerp(0.35f, 1f, peso));
+                    _motor.Sacudir(Mathf.Lerp(0.4f, 1f, peso));
+                    AudioDirector.DestacarSfx(Mathf.Lerp(0.5f, 1f, peso), 0.6f);
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------ cidade
+        private void AtualizarCidade(bool dirigindo)
+        {
+            if (_cidade == null) return;
+
+            _cidade.NaCabine = dirigindo ? 1f : 0f;
+            _cidade.Hora     = _hora != null ? _hora.Hour : 12f;
+
+            int estrelas = _mundo != null ? _mundo.Stars : 0;
+            _cidade.Urgencia = Mathf.Clamp01(estrelas / 5f);
+
+            // a viatura mais próxima é consultada duas vezes por segundo: buscar todo quadro é caro e
+            // uma sirene não muda de distância em 16 ms
+            if (Time.unscaledTime >= _proximaBusca)
+            {
+                _proximaBusca = Time.unscaledTime + 0.5f;
+                if (_policia == null) _policia = FindObjectOfType<PoliceSystem>();
+
+                float perto = 999f;
+                if (_policia != null && _ouvinte != null) perto = _policia.NearestDistanceTo(_ouvinte);
+                _cidade.Sirene = estrelas > 0 ? Mathf.Clamp01(1f - perto / 120f) : 0f;
+            }
+
+            // sirene perto rouba a atenção: é a hora em que o jogador precisa ouvir a polícia, não o funk
+            if (_cidade.Sirene > 0.25f)
+                AudioDirector.Abafar(Barramento.Musica, Mathf.Lerp(1f, 0.55f, _cidade.Sirene), 0.6f);
         }
 
         /// <summary>Toca o chime de sucesso (chamado por <see cref="MissionTracker"/>).</summary>
         public void Chime()
         {
-            if (_sfx != null && _clipChime != null) _sfx.PlayOneShot(_clipChime, 0.9f);
+            Tocar(_clipChime, 0.9f);
+            AudioDirector.DestacarSfx(0.75f, 0.9f);
         }
 
-        // ================================================================== síntese PCM
-        /// <summary>
-        /// Motor: fundamental + harmônicas ímpares (dá o ronco áspero de motor a combustão) + sopro.
-        /// O clipe é curto e o pitch faz o resto — sintetizar por giro em tempo real custaria caro.
-        /// </summary>
-        private AudioClip ClipeMotor()
+        private void Tocar(AudioClip clip, float volume)
         {
-            int len = kSampleRate / 2;
-            var buf = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t = (float)i / kSampleRate;
-                float s = Mathf.Sin(2f * Mathf.PI * 55f  * t) * 0.50f
-                        + Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.26f
-                        + Mathf.Sin(2f * Mathf.PI * 165f * t) * 0.18f   // 3ª harmônica: aspereza
-                        + Mathf.Sin(2f * Mathf.PI * 275f * t) * 0.08f   // 5ª
-                        + Ruido(t) * 0.07f;                             // admissão
-                buf[i] = s * 0.55f;
-            }
-            return Montar("motor", buf);
+            if (_sfx == null || clip == null) return;
+            _sfx.PlayOneShot(clip, volume * AudioDirector.Ganho(Barramento.Sfx));
         }
 
-        /// <summary>Troca de marcha: baque curto e grave, com um clique metálico por cima.</summary>
-        private AudioClip ClipeTroca()
+        // ================================================================== disparos curtos
+        // Só o que é transiente continua sendo clipe pronto: são poucos milissegundos cada um, e um
+        // one-shot é mais barato do que manter um fluxo aberto para tocar 150 ms de vez em quando.
+        // Todos são gerados com envelope que começa e termina em zero — nada de estalo nas pontas.
+
+        /// <summary>Troca de marcha: baque curto e grave com um clique metálico por cima.</summary>
+        private static AudioClip ClipeTroca()
         {
-            int len = (int)(kSampleRate * 0.16f);
+            int len = (int)(kTaxa * 0.16f);
             var buf = new float[len];
+            var rnd = new CaosDsp.Ruido(4711);
+            float fase = 0f;
             for (int i = 0; i < len; i++)
             {
-                float t = (float)i / kSampleRate;
-                float env = Mathf.Exp(-t * 28f);
-                float baque  = Mathf.Sin(2f * Mathf.PI * 90f * t) * 0.6f;
-                float clique = Ruido(t * 3f) * Mathf.Exp(-t * 70f) * 0.5f;
+                float t = (float)i / kTaxa;
+                float env = CaosDsp.Decaimento(t, 28f) * Mathf.Min(1f, t * 900f);
+                fase = CaosDsp.Avancar(fase, 90f / kTaxa);
+                float baque  = CaosDsp.Seno(fase) * 0.6f;
+                float clique = rnd.Proximo() * CaosDsp.Decaimento(t, 70f) * 0.5f;
                 buf[i] = (baque + clique) * env;
             }
             return Montar("troca", buf);
         }
 
-        /// <summary>Pneu cantando: ruído filtrado com formante agudo.</summary>
-        private AudioClip ClipePneu()
+        /// <summary>Buzina de carro popular: duas notas juntas e ligeiramente desafinadas.</summary>
+        private static AudioClip ClipeBuzina()
         {
-            int len = kSampleRate;
+            int len = (int)(kTaxa * 0.55f);
             var buf = new float[len];
-            float anterior = 0f;
+            float p1 = 0f, p2 = 0f, p3 = 0f;
             for (int i = 0; i < len; i++)
             {
-                float t = (float)i / kSampleRate;
-                float bruto = Ruido(t * 7f);
-                anterior = Mathf.Lerp(anterior, bruto, 0.35f);            // passa-baixa simples
-                float formante = Mathf.Sin(2f * Mathf.PI * 1200f * t) * 0.25f;
-                buf[i] = (anterior * 0.8f + anterior * formante) * 0.5f;
-            }
-            return Montar("pneu", buf);
-        }
-
-        /// <summary>Buzina: duas notas juntas, meio desafinadas — buzina de carro popular.</summary>
-        private AudioClip ClipeBuzina()
-        {
-            int len = (int)(kSampleRate * 0.55f);
-            var buf = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t = (float)i / kSampleRate;
+                float t = (float)i / kTaxa;
                 float env = Mathf.Clamp01(t * 40f) * Mathf.Clamp01((0.55f - t) * 12f);
-                float s = Mathf.Sin(2f * Mathf.PI * 420f * t) * 0.5f
-                        + Mathf.Sin(2f * Mathf.PI * 530f * t) * 0.45f
-                        + Mathf.Sin(2f * Mathf.PI * 840f * t) * 0.15f;
-                buf[i] = s * env * 0.55f;
+                p1 = CaosDsp.Avancar(p1, 420f / kTaxa);
+                p2 = CaosDsp.Avancar(p2, 530f / kTaxa);
+                p3 = CaosDsp.Avancar(p3, 840f / kTaxa);
+                float s = CaosDsp.Seno(p1) * 0.5f + CaosDsp.Seno(p2) * 0.45f + CaosDsp.Seno(p3) * 0.15f;
+                buf[i] = CaosDsp.Saturar(s * 1.4f) * env * 0.55f;
             }
             return Montar("buzina", buf);
         }
 
-        private AudioClip ClipeChime()
+        /// <summary>
+        /// Batida: chapa amassando (ruído grave em queda), estilhaço de vidro/plástico por cima e um
+        /// estouro seco na frente. É curto de propósito — impacto longo vira desenho animado.
+        /// </summary>
+        private static AudioClip ClipeBatida()
         {
-            int len = (int)(kSampleRate * 0.5f);
+            int len = (int)(kTaxa * 0.7f);
             var buf = new float[len];
+            var rnd = new CaosDsp.Ruido(1312);
+            CaosDsp.Biquad chapa = default, vidro = default;
+            chapa.PassaBanda(220f, 1.1f, kTaxa);
+            vidro.PassaBanda(4200f, 2.5f, kTaxa);
+            float fase = 0f;
+
             for (int i = 0; i < len; i++)
             {
-                float t   = (float)i / kSampleRate;
-                float env = Mathf.Exp(-t * 4f);
-                float f   = (t < 0.22f) ? 660f : 990f;
-                buf[i] = Mathf.Sin(2f * Mathf.PI * f * t) * env * 0.6f;
+                float t = (float)i / kTaxa;
+                float x = rnd.Proximo();
+                fase = CaosDsp.Avancar(fase, Mathf.Lerp(110f, 45f, Mathf.Min(1f, t * 6f)) / kTaxa);
+
+                float impacto = chapa.Filtrar(x) * CaosDsp.Decaimento(t, 9f) * 2.4f
+                              + CaosDsp.Seno(fase) * CaosDsp.Decaimento(t, 14f) * 0.7f;
+                float caco = vidro.Filtrar(x) * CaosDsp.Decaimento(t, 5.5f) * (rnd.Sorte() < 0.06f ? 2.2f : 0.35f);
+                buf[i] = CaosDsp.Saturar((impacto + caco) * 1.2f) * Mathf.Min(1f, t * 1200f);
+            }
+            return Montar("batida", buf);
+        }
+
+        /// <summary>Chime de missão: duas notas ascendentes com cauda — a recompensa precisa soar limpa.</summary>
+        private static AudioClip ClipeChime()
+        {
+            int len = (int)(kTaxa * 0.85f);
+            var buf = new float[len];
+            float p1 = 0f, p2 = 0f, p3 = 0f;
+            for (int i = 0; i < len; i++)
+            {
+                float t = (float)i / kTaxa;
+                p1 = CaosDsp.Avancar(p1, 660f / kTaxa);
+                p2 = CaosDsp.Avancar(p2, 990f / kTaxa);
+                p3 = CaosDsp.Avancar(p3, 1320f / kTaxa);
+
+                float a = CaosDsp.Decaimento(t, 3.2f) * Mathf.Min(1f, t * 500f);
+                float b = t > 0.16f ? CaosDsp.Decaimento(t - 0.16f, 2.6f) : 0f;
+                buf[i] = (CaosDsp.Seno(p1) * a * 0.55f
+                        + CaosDsp.Seno(p2) * b * 0.50f
+                        + CaosDsp.Seno(p3) * b * 0.18f) * 0.7f;
             }
             return Montar("chime", buf);
         }
 
-        private AudioClip ClipePad()
-        {
-            int len = (int)(kSampleRate * 2f);
-            var buf = new float[len];
-            for (int i = 0; i < len; i++)
-            {
-                float t   = (float)i / kSampleRate;
-                float s   = Mathf.Sin(2f * Mathf.PI * 110f * t) * 0.5f
-                          + Mathf.Sin(2f * Mathf.PI * 165f * t) * 0.35f;
-                float lfo = 0.5f + 0.5f * Mathf.Sin(2f * Mathf.PI * 0.2f * t);
-                buf[i] = s * lfo * 0.18f;
-            }
-            return Montar("ambiente", buf);
-        }
-
-        /// <summary>Ruído determinístico — o clipe soa igual em toda máquina.</summary>
-        private static float Ruido(float t) => (Mathf.Abs(Mathf.Sin(t * 99991f) * 43758.5453f) % 1f) * 2f - 1f;
-
         private static AudioClip Montar(string nome, float[] buf)
         {
-            var clip = AudioClip.Create(nome, buf.Length, 1, kSampleRate, stream: false);
+            var clip = AudioClip.Create(nome, buf.Length, 1, kTaxa, stream: false);
             clip.SetData(buf, 0);
             return clip;
         }
 
         private void OnDestroy()
         {
-            if (_clipMotor    != null) Destroy(_clipMotor);
-            if (_clipChime    != null) Destroy(_clipChime);
-            if (_clipAmbiente != null) Destroy(_clipAmbiente);
-            if (_clipTroca    != null) Destroy(_clipTroca);
-            if (_clipPneu     != null) Destroy(_clipPneu);
-            if (_clipBuzina   != null) Destroy(_clipBuzina);
+            if (_fonteVeiculo != null) _fonteVeiculo.Stop();
+            if (_fonteCidade  != null) _fonteCidade.Stop();
+            _fluxoVeiculo?.Destruir();
+            _fluxoCidade?.Destruir();
+
+            if (_clipChime  != null) Destroy(_clipChime);
+            if (_clipTroca  != null) Destroy(_clipTroca);
+            if (_clipBuzina != null) Destroy(_clipBuzina);
+            if (_clipBatida != null) Destroy(_clipBatida);
         }
     }
 }
