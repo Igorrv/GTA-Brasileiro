@@ -50,7 +50,7 @@ namespace Caos.Bootstrap
 
         private IEnumerator Boot()
         {
-            Debug.Log("[GameManager] Boot: criando serviços base...");
+            CaosLog.Info("[GameManager] Boot: criando serviços base...");
 
             // 1) serviços que não dependem de catálogos
             Time       = new TimeOfDayService();
@@ -60,14 +60,17 @@ namespace Caos.Bootstrap
             Experience = new ExperienceService();
             Reputation = new ReputationService();
 
-            // XP das missões: o valor já existia no catálogo, mas não era creditado a ninguém
-            EventBus<MissaoConcluida>.Subscribe(e => Experience.Adicionar(e.xp, "missão " + e.id));
+            // XP das missões: o valor já existia no catálogo, mas não era creditado a ninguém.
+            // Método nomeado (e não lambda) para que dê para cancelar a assinatura no OnDestroy — uma
+            // closure nova a cada boot nunca casa com a lista e o barramento acumularia um handler
+            // morto por sessão.
+            EventBus<MissaoConcluida>.Subscribe(CreditarXpDaMissao);
 
             // 2) registra os que já existem (permite UI conectar cedo)
             RegisterServices();
 
             // 3) carrega catálogos (StreamingAssets/Data/*.json)
-            Debug.Log("[GameManager] Carregando catálogos...");
+            CaosLog.Info("[GameManager] Carregando catálogos...");
             bool catalogsDone = false;
             CatalogLoader.LoadAsync(this, catalogs => { Catalogs = catalogs; catalogsDone = true; });
             yield return new WaitUntil(() => catalogsDone);
@@ -76,7 +79,7 @@ namespace Caos.Bootstrap
             if (Catalogs == null || Catalogs.Vehicles.Count == 0)
             {
                 Catalogs = GameCatalogs.CreateFallback();
-                Debug.LogWarning("[GameManager] Catálogos vazios/falha ao carregar — usando FALLBACK. O mundo abre mesmo assim.");
+                CaosLog.Aviso("[GameManager] Catálogos vazios/falha ao carregar — usando FALLBACK. O mundo abre mesmo assim.");
             }
 
             // 4) serviços que dependem de catálogos
@@ -85,7 +88,7 @@ namespace Caos.Bootstrap
             Missions = new MissionService(Catalogs, Economy);
 
             // 5) espera o menu inicial dizer em qual slot vamos jogar
-            Debug.Log("[GameManager] Aguardando escolha de slot no menu inicial...");
+            CaosLog.Info("[GameManager] Aguardando escolha de slot no menu inicial...");
             yield return new WaitUntil(() => GameSession.Iniciado);
             SaveSystem.SlotAtual = GameSession.Slot;
 
@@ -94,11 +97,11 @@ namespace Caos.Bootstrap
             if (save != null)
             {
                 SaveSystem.Apply(save, Attributes, Economy, Reputation, World, Time, Missions, Experience);
-                Debug.Log($"[GameManager] Slot {GameSession.Slot}: save restaurado.");
+                CaosLog.Info($"[GameManager] Slot {GameSession.Slot}: save restaurado.");
             }
             else
             {
-                Debug.Log($"[GameManager] Slot {GameSession.Slot}: começando novo jogo.");
+                CaosLog.Info($"[GameManager] Slot {GameSession.Slot}: começando novo jogo.");
             }
 
             // 6) re-registra (agora inclui todos) e monta a lista de tickables
@@ -108,7 +111,7 @@ namespace Caos.Bootstrap
             // 7) ao jogo
             Fsm.ChangeState(new PlayingState());
             Ready = true;
-            Debug.Log("[GameManager] Pronto. Mundo rodando. (Console mostra ticks/eventos.)");
+            CaosLog.Info("[GameManager] Pronto. Mundo rodando. (Console mostra ticks/eventos.)");
             Attributes.PublishSnapshot();
             Economy.Add(0, 0); // força publicar estado inicial de dinheiro
         }
@@ -138,9 +141,26 @@ namespace Caos.Bootstrap
                 SaveSystem.Capture(Attributes, Economy, Reputation, World, Time, Missions, Experience);
         }
 
+        private void CreditarXpDaMissao(MissaoConcluida e)
+        {
+            if (Experience != null) Experience.Adicionar(e.xp, "missão " + e.id);
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance != this) return;   // duplicata sendo descartada no Awake: não é dona de nada
+            EventBus<MissaoConcluida>.Unsubscribe(CreditarXpDaMissao);
+            Instance = null;
+        }
+
+        /// <summary>
+        /// Publica os serviços já criados. <b>Não limpa a tabela</b>: o registro é compartilhado entre
+        /// assemblies (a Simulation registra o catálogo de resgate quando o boot demora), e um Reset no
+        /// meio do boot apagaria o que a outra camada acabou de pôr lá. Quem zera é o
+        /// <see cref="CaosRuntime.Reiniciar"/>, uma única vez, antes de qualquer cena.
+        /// </summary>
         private void RegisterServices()
         {
-            ServiceLocator.Reset();
             if (Time != null)       ServiceLocator.Register(Time);
             if (World != null)      ServiceLocator.Register(World);
             if (Attributes != null) ServiceLocator.Register(Attributes);

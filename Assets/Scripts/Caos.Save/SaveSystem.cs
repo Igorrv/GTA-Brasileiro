@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Caos.Core;
 using Caos.Data;
 using Caos.Gameplay;
 using Caos.World;
@@ -65,7 +66,7 @@ namespace Caos.Save
                 savedAt = DateTime.Now.ToString("dd/MM/yyyy HH:mm")
             };
             File.WriteAllText(Caminho(slot), JsonUtility.ToJson(data, prettyPrint: true));
-            Debug.Log($"[Save] Slot {slot} salvo em {Caminho(slot)}.");
+            CaosLog.Info($"[Save] Slot {slot} salvo em {Caminho(slot)}.");
         }
 
         public static SaveData Load() => Load(SlotAtual);
@@ -74,7 +75,7 @@ namespace Caos.Save
         {
             if (!Existe(slot)) return null;
             try { return JsonUtility.FromJson<SaveData>(File.ReadAllText(Caminho(slot))); }
-            catch (Exception e) { Debug.LogWarning($"[Save] Falha ao carregar slot {slot}: {e.Message}"); return null; }
+            catch (Exception e) { CaosLog.Aviso($"[Save] Falha ao carregar slot {slot}: {e.Message}"); return null; }
         }
 
         public static void Apply(SaveData d, PlayerAttributes attrs, EconomyService econ, ReputationService rep,
@@ -92,7 +93,7 @@ namespace Caos.Save
             rep.Hydrate(FromSave(d.repFaction), FromSave(d.repDistrict));
             missions.Hydrate(d.missionsCompleted, d.missionsActive);
             xp?.Hydrate(d.xXp, d.xNivel <= 0 ? 1 : d.xNivel);
-            Debug.Log("[Save] Estado restaurado.");
+            CaosLog.Info("[Save] Estado restaurado.");
         }
 
         public static void Delete() => Delete(SlotAtual);
