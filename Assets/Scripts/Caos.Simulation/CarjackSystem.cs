@@ -31,6 +31,7 @@ namespace Caos.Simulation
         private Transform         _veiculoT;
         private WorldStateService _world;
         private bool              _ocupado;
+        private TrafficSystem    _trafego;   // cache: antes, FindObjectsOfType<TrafficCar> a cada quadro
 
         /// <summary>Texto que o HUD mostra quando dá pra roubar (vazio quando não dá).</summary>
         public string Prompt { get; private set; } = "";
@@ -46,14 +47,24 @@ namespace Caos.Simulation
 
         private void Update()
         {
-            Prompt = "";
-            if (_ocupado || _player == null || _link == null || !_link.OnFoot) return;
+            // só recompõe o prompt quando o alvo muda — antes, a interpolação de string rodava a cada
+            // quadro a pé, alocando GC mesmo longe de qualquer carro (docs/12 §12.10).
+            if (_ocupado || _player == null || _link == null || !_link.OnFoot)
+            {
+                if (Prompt.Length != 0) Prompt = "";
+                return;
+            }
 
             var alvo = AlvoMaisProximo();
-            if (alvo == null) return;
+            if (alvo == null)
+            {
+                if (Prompt.Length != 0) Prompt = "";
+                return;
+            }
 
             string nome = alvo.dto != null ? alvo.dto.nome : "carro";
-            Prompt = alvo.ehMoto ? $"{nome} — [E] tomar a moto" : $"{nome} — [E] roubar";
+            string prompt = alvo.ehMoto ? $"{nome} — [E] tomar a moto" : $"{nome} — [E] roubar";
+            if (prompt != Prompt) Prompt = prompt;
 
             if (GameInput.Interact) StartCoroutine(Roubar(alvo));
         }
@@ -61,11 +72,17 @@ namespace Caos.Simulation
         /// <summary>Carro do trânsito ao alcance da porta, andando devagar o bastante.</summary>
         private TrafficCar AlvoMaisProximo()
         {
+            // resolve o TrafficSystem uma vez (ele já existe quando o roubo é montado) e lê a lista
+            // ativa — FindObjectsOfType<TrafficCar> varria a cena inteira a cada quadro a pé.
+            if (_trafego == null) _trafego = FindObjectOfType<TrafficSystem>();
+            if (_trafego == null) return null;
+
             TrafficCar melhor = null;
             float melhorD = kAlcance;
-
-            foreach (var c in FindObjectsOfType<TrafficCar>())
+            var carros = _trafego.ActiveUnits;
+            for (int i = 0; i < carros.Count; i++)
             {
+                var c = carros[i];
                 if (c == null || !c.gameObject.activeInHierarchy) continue;
                 if (c.velocidade * 3.6f > kVelMaxAlvo) continue;
 

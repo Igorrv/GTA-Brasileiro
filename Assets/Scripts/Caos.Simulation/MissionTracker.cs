@@ -113,7 +113,8 @@ namespace Caos.Simulation
 
             if (!retomada) _missions.Accept(pick);
             _activeId = pick;
-            _active   = _catalogs.MissionById[pick];
+            if (_catalogs.MissionById == null || !_catalogs.MissionById.TryGetValue(pick, out _active) || _active == null)
+            { _activeId = null; _active = null; ShowNone(); return; }
             AnalyzeMission();
             RefreshPanel();
             Debug.Log("[Missão] Ativa: " + _active.titulo + " — " + (_isVehicleMission ? "entre no veículo" : "vá até " + _destLabel));

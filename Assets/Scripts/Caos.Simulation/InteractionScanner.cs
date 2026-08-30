@@ -36,6 +36,12 @@ namespace Caos.Simulation
         public string Toast       { get; private set; } = "";
         public float  ToastUntil  { get; private set; }
 
+        // cache do prompt: o texto só é reconstruído quando o alvo (ou o estado de alcance) muda.
+        // Antes, a interpolação de string + o EscolherItem rodavam a cada quadro, alocando GC
+        // mesmo parado perto de uma loja (docs/12 §12.10 — evitar alloc em hot path).
+        private Interactable _lastNear;
+        private bool _lastInRange;
+
         public void Init(Transform player, PlayerVehicleLink link, VehicleController vehicle,
                          VehicleHealth health, List<Interactable> list)
         {
@@ -56,7 +62,14 @@ namespace Caos.Simulation
             Interactable near = Nearest();
             bool alcance = near != null && Dist(near) <= near.radius;
 
-            Prompt = alcance ? $"{near.rotulo}  —  [F] {Verb(near)}" : "";
+            // só recompõe o prompt quando algo muda: trocou de loja, entrou/saiu do alcance.
+            // No estado comum (parado ou andando longe) não aloca string nenhuma.
+            if (near != _lastNear || alcance != _lastInRange)
+            {
+                _lastNear = near;
+                _lastInRange = alcance;
+                Prompt = alcance ? $"{near.rotulo}  —  [F] {Verb(near)}" : "";
+            }
 
             if (alcance && GameInput.Use) Execute(near);
         }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Caos.Simulation
 {
@@ -56,6 +57,12 @@ namespace Caos.Simulation
             // ---- céu procedural + reflexo ambiente ----
             MontarCeu();
 
+            // ---- URP no celular: o asset único do projeto vem afinado p/ PC (4 cascatas, sombra 2048,
+            // MSAA 4×, HDR). No URP o QualitySettings de sombra é ignorado — quem manda é o asset.
+            // Em build mobile, rebaixamos o asset ativo em runtime p/ segurar 60 fps no mid-range.
+            // (Só roda em build mobile — no editor/CI o asset não é tocado, então não suja o .asset.)
+            if (Mobile) AjustarUrpMobile();
+
             // preferências do jogador vêm por cima do perfil padrão
             SettingsMenu.Carregar();
 
@@ -102,6 +109,34 @@ namespace Caos.Simulation
             RenderSettings.defaultReflectionResolution = Mobile ? 64 : 128;
             RenderSettings.reflectionIntensity         = 0.75f;
             DynamicGI.UpdateEnvironment();
+        }
+
+        /// <summary>
+        /// Rebaixa o asset URP ativo p/ um perfil mobile: render scale 0,8×, 2 cascatas, sombra curta,
+        /// sem MSAA, sem HDR. É o que de fato controla o custo de render no URP — o
+        /// <c>QualitySettings.shadowDistance</c> é ignorado por este pipeline (docs/12 §12.10).
+        ///
+        /// Os setters só existem no URP asset; se um dia o pipeline voltar ao Built-in,
+        /// <c>currentRenderPipeline</c> não é <c>UniversalRenderPipelineAsset</c> e nada acontece —
+        /// degrada sem quebrar.
+        /// </summary>
+        private static void AjustarUrpMobile()
+        {
+            var asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (asset == null)
+            {
+                Debug.Log("[Perf] URP ativo não encontrado — perfil mobile não aplicado (Built-in?).");
+                return;
+            }
+
+            asset.renderScale        = 0.8f;     // 80% da resolução — o maior ganho de fill-rate no mobile
+            asset.shadowDistance      = 60f;
+            asset.shadowCascadeCount  = 2;
+            asset.msaaSampleCount     = 0;       // sem MSAA no mobile (o bloom já suaviza)
+            asset.supportsHDR         = false;   // HDR dobra o custo do bloom no celular
+            asset.maxAdditionalLightsCount = 1;  // só a luz principal por pixel
+
+            Debug.Log("[Perf] URP mobile: renderScale 0,8 · sombra 60 m em 2 cascatas · sem MSAA · sem HDR.");
         }
     }
 }
