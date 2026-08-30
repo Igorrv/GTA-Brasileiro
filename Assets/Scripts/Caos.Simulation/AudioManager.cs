@@ -94,7 +94,6 @@ namespace Caos.Simulation
         private void Update()
         {
             bool dirigindo = _link != null && !_link.OnFoot && _vehicle != null;
-            AudioDirector.NaCabine = dirigindo;
 
             AtualizarVeiculo(dirigindo);
             AtualizarCidade(dirigindo);

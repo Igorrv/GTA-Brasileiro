@@ -99,6 +99,7 @@ namespace Caos.Simulation
 
             _estacao = _sorteio.Next(_estacoes.Count);
             AplicarEstacao(reiniciarFaixa: true);
+            _tx.Sintonia(kSintonia);          // a primeira vez que se entra no carro também é uma sintonia
             Entrar(Bloco.Sintonia, kSintonia);
         }
 
@@ -159,6 +160,7 @@ namespace Caos.Simulation
             if (Ligado)
             {
                 AplicarEstacao(reiniciarFaixa: false);
+                _tx?.Sintonia(kSintonia * 0.6f);
                 Entrar(Bloco.Sintonia, kSintonia * 0.6f);
             }
             else

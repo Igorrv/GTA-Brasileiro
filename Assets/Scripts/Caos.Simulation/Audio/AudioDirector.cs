@@ -59,9 +59,6 @@ namespace Caos.Simulation.Audio
         private static bool  _appEmSegundoPlano;
         private static bool  _semFoco;
 
-        /// <summary>O jogador está dentro do veículo — a cabine abafa a cidade e libera o rádio.</summary>
-        public static bool NaCabine { get; set; }
-
         /// <summary>
         /// Quanto barulho de fundo (motor + vento) está mascarando o resto, de 0 a 1. O rádio usa para
         /// subir um pouco em alta velocidade, que é o que qualquer aparelho de carro decente faz.
@@ -84,7 +81,8 @@ namespace Caos.Simulation.Audio
                 cfg.dspBufferSize   = Application.isMobilePlatform ? 1024 : 512;
                 cfg.numRealVoices   = Application.isMobilePlatform ? 16 : 32;
                 cfg.numVirtualVoices = 64;
-                AudioSettings.Reset(cfg);
+                if (!AudioSettings.Reset(cfg))
+                    Debug.LogWarning("[Áudio] A plataforma recusou o buffer de DSP pedido; seguindo com o padrão.");
             }
             catch (System.Exception e)
             {
@@ -120,9 +118,6 @@ namespace Caos.Simulation.Audio
             if (b == Barramento.Musica) g *= SettingsMenu.VolumeMusica;
             return g;
         }
-
-        /// <summary>Ducking puro do barramento (1 = livre), para quem precisa do fator sem a mixagem.</summary>
-        public static float Ducking(Barramento b) => _canais[(int)b].Atual;
 
         /// <summary>
         /// Pede espaço: derruba <paramref name="alvo"/> para <paramref name="ganho"/> e segura por

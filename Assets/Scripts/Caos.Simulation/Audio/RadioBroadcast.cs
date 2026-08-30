@@ -58,7 +58,10 @@ namespace Caos.Simulation.Audio
 
         // Agendamento por contagem regressiva, e não por instante absoluto: um relógio em float que só
         // cresce perde resolução depois de algumas horas de sessão e os prazos começam a errar.
+        // Pedido por contador: a thread principal só incrementa o gatilho e a de áudio compara com o
+        // último que viu. Nenhuma das duas escreve no campo da outra, então nenhum pedido se perde.
         private volatile float _estaticaPedida;
+        private volatile int   _estaticaGatilho;
         private volatile float _vinhetaPedida;
         private volatile int   _vinhetaGatilho;
 
@@ -110,7 +113,7 @@ namespace Caos.Simulation.Audio
         // o padrão, a harmonia e a tonalidade vinham só da estação, e a semente só mexia no solo
         private int   _transpose, _variante, _rotacao;
         private float _densidade = 1f;
-        private int   _vinhetaNota = -1, _vinhetaVisto;
+        private int   _vinhetaNota = -1, _vinhetaVisto, _estaticaVista;
         private float _vinhetaT, _vinhetaDur = 1.15f, _estaticaT;
 
         public RadioBroadcast(int taxa) { _taxa = Mathf.Clamp(taxa, 8000, 48000); }
@@ -202,7 +205,11 @@ namespace Caos.Simulation.Audio
         public void Desligar() { _programa = null; _locutor.Calar(); }
 
         /// <summary>Chiado de sintonia por alguns instantes — o gesto de girar o dial.</summary>
-        public void Sintonia(float segundos) { _estaticaPedida = Mathf.Max(0.05f, segundos); }
+        public void Sintonia(float segundos)
+        {
+            _estaticaPedida = Mathf.Max(0.05f, segundos);
+            _estaticaGatilho++;
+        }
 
         /// <summary>Vinheta da estação (as quatro notas do <c>id</c>).</summary>
         public void Vinheta(float segundos = 1.15f)
@@ -233,8 +240,12 @@ namespace Caos.Simulation.Audio
             if (prog != null && prog.Versao != _versaoAtiva) TrocarPrograma(prog);
 
             // pedidos da thread principal viram contagem regressiva local
-            float pedidoEstatica = _estaticaPedida;
-            if (pedidoEstatica > 0f) { _estaticaPedida = 0f; _estaticaT = Mathf.Max(_estaticaT, pedidoEstatica); }
+            int gatilhoEstatica = _estaticaGatilho;
+            if (gatilhoEstatica != _estaticaVista)
+            {
+                _estaticaVista = gatilhoEstatica;
+                _estaticaT = Mathf.Max(_estaticaT, _estaticaPedida);
+            }
             int gatilho = _vinhetaGatilho;
             if (gatilho != _vinhetaVisto)
             {

@@ -52,29 +52,12 @@ namespace Caos.Simulation.Audio
             return fase;
         }
 
-        /// <summary>Dente de serra com anti-alias leve (PolyBLEP) — base de baixo e naipe de metais.</summary>
+        /// <summary>Dente de serra com anti-alias leve (PolyBLEP) — base do baixo, da sanfona e do solo.</summary>
         public static float Dente(float fase, float incremento)
         {
             fase -= Mathf.Floor(fase);
             float s = fase * 2f - 1f;
             return s - PolyBlep(fase, incremento);
-        }
-
-        /// <summary>Onda quadrada com largura de pulso variável — palhetado seco, sanfona, órgão.</summary>
-        public static float Quadrada(float fase, float incremento, float largura)
-        {
-            fase -= Mathf.Floor(fase);
-            float s = fase < largura ? 1f : -1f;
-            s += PolyBlep(fase, incremento);
-            float b = fase - largura;
-            s -= PolyBlep(b - Mathf.Floor(b), incremento);
-            return s;
-        }
-
-        public static float Triangulo(float fase)
-        {
-            fase -= Mathf.Floor(fase);
-            return 4f * (fase < 0.5f ? fase : 1f - fase) - 1f;
         }
 
         /// <summary>Correção de degrau: sem ela o dente de serra grave vira chiado agudo no celular.</summary>
@@ -237,11 +220,6 @@ namespace Caos.Simulation.Audio
             if (x >  3f) return  1f;
             return x * (27f + x * x) / (27f + 9f * x * x);
         }
-
-        public static float Db(float db) => Mathf.Pow(10f, db * 0.05f);
-
-        /// <summary>Semitons acima da referência → multiplicador de frequência.</summary>
-        public static float Semitom(int n) => Mathf.Pow(2f, n / 12f);
 
         /// <summary>Hash estável de string (não usa <c>GetHashCode</c>, que varia entre execuções).</summary>
         public static int Hash(string s)
